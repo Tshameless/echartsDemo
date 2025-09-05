@@ -1,10 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import { NConfigProvider } from 'naive-ui'
+import router from './router'
 
 const app = createApp(App)
-app.use(NConfigProvider)
-app.mount('#app')
 app.use(router)
-
 app.mount('#app')
