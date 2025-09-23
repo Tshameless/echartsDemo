@@ -79,7 +79,8 @@ interface ChartOptions {
     tooltipBorderColor?: string //默认提示边框色
     tooltipColor?: string //默认提示文字色
     tooltipFormatter?: (params: any) => string //默认提示格式化器,对于有特殊需求时，可自定义，如果需要修改组件的统一提示，请修改defaultTooltipFormatter函数
-    legend?: boolean //默认显示图例
+    legendshowValue?: boolean //默认显示图例
+    legend?: object //图例配置
     legendLocation?: string //默认图例水平方向位置
     legendTop?: string //默认图例距离顶部
     legendOrient?: string //默认图例方向
@@ -93,10 +94,17 @@ interface ChartOptions {
     dataZoomStart?: number, //默认数据缩放开始
     dataZoomEnd?: number, //默认数据缩放结束
     dataZoomHeight?: number //默认数据缩放高度
+  tooltip?: { //默认提示框
+    trigger?: string //默认提示框触发方式
+    axisPointer?: { //默认提示框坐标轴指示器
+      type?: string //默认提示框坐标轴指示器类型
+    }
+  }
     grid?: { //默认图表区域
-        left?: string //默认图表区域距离左侧
-        right?: string //默认图表区域距离右侧
-        bottom?: string //默认图表区域距离底部
+    top?: string | number //默认图表区域距离顶部
+    left?: string | number //默认图表区域距离左侧
+    right?: string | number //默认图表区域距离右侧
+    bottom?: string | number //默认图表区域距离底部
         containLabel?: boolean //默认图表区域是否包含标签
     }
     xAxis?: Array<any> //默认X轴，可以自定义整个X轴，也可以修改单个X轴的属性
@@ -105,7 +113,7 @@ interface ChartOptions {
     xType?: string //默认X轴类型
     boundaryGap?: boolean //默认X轴是否间距
     xAxisLabel?: AxisLabel //默认X轴标签样式，可以修改单个X轴标签的样式，也可以统一修改
-    timeList?: Array<string> //默认时间轴
+  timeList?: Array<string | number> //默认时间轴
     xColor?: string //默认X轴标签颜色
     xUnitColor?: string //默认X轴标签单位
     xFontSize?: string //默认X轴标签字体大小
@@ -258,8 +266,8 @@ const initStationRef = (item: ChartOptions) => {
                 label: { backgroundColor: '#6a7985' }
             }
         },
-        legend: {
-            show: item.legend ?? true,
+        legend:item.legend ? item.legend : {
+            show: item.legendshowValue ?? true,
             left: item.legendLocation ?? 'center',
             top: item.legendTop ?? 'top',
             orient: item.legendOrient ?? 'horizontal',

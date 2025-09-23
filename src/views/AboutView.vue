@@ -170,7 +170,7 @@ onMounted(() => {
           tableUnit: '(MW)',
           data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
             if (n % 2 == 0) {
-              return n * (-1.3)
+              return n * (1.2)
             } else {
               return n * 5
             }
