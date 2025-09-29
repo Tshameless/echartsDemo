@@ -514,6 +514,7 @@ const calculateTableData = (item: ChartOptions, tableHeader: any, tableData: any
         tableData.value.shift()
     }
 }
+defineExpose({ resizeHandler })//暴露方法,在父组件中调用
 
 onMounted(() => {
     initStationRef(opt.value)

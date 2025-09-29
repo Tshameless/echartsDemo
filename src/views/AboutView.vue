@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div class="container" id="home-root">
 
     <div class="lineEChartsBox">
       <lineECharts v-if="Object.keys(eChartsData2).length > 0" :opt="eChartsData2" :height="350"></lineECharts>
@@ -15,7 +15,7 @@
     </div>
 
     <div class="lineEChartsBox">
-      <lineECharts v-if="Object.keys(eChartsData4).length > 0" :opt="eChartsData4" :height="350"></lineECharts>
+      <lineECharts  ref="chartRef" v-if="Object.keys(eChartsData4).length > 0" :opt="eChartsData4" :height="350"></lineECharts>
     </div>
 
   </div>
@@ -29,6 +29,8 @@ const eChartsData2 = ref({})
 const eChartsData3 = ref({})
 const eChartsData4 = ref({})
 const eleEchartsData = ref({})
+let resizeObserver = null
+const chartRef=ref()
 onMounted(() => {
   nextTick(() => {
     eChartsData.value = {
@@ -278,14 +280,22 @@ onMounted(() => {
 
     }
   })
-
+ nextTick(() => {
+        const mainContent = document.getElementById('home-root')
+        if (mainContent) {
+            resizeObserver = new window.ResizeObserver(() => {
+                chartRef.value?.resizeHandler && chartRef.value.resizeHandler()
+            })
+            resizeObserver.observe(mainContent)
+        }
+    })
 
 })
 </script>
 <style>
 .container {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   background-color: #666;
   display: flex;
   flex-wrap: wrap;
