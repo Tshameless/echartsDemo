@@ -45,7 +45,7 @@
   </div>
 </template> -->
 <script lang="ts" setup>
-import { toRefs, onMounted, ref, onUnmounted } from 'vue'
+import { toRefs, onMounted, ref, onUnmounted, watch, nextTick } from 'vue'
 import * as eCharts from 'echarts'
 // 定义颜色常量
 const itemColorArr = ['red', '#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
@@ -213,16 +213,47 @@ const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | n
 }
 
 // 初始化图表
-let myChart: echarts.ECharts
-let resizeHandler = () => { myChart.resize() }
+let myChart: echarts.ECharts | null = null
+// 定义 resize 处理函数，使用响应式方式确保总是引用最新的 chart 实例
+const resizeHandler = () => { 
+  if (myChart && !myChart.isDisposed()) {
+    console.log('📊 图表 resize 被调用', {
+      容器宽度: eChartsBoxRef.value?.offsetWidth,
+      容器高度: eChartsBoxRef.value?.offsetHeight,
+      图表实例存在: !!myChart
+    })
+    myChart.resize()
+  } else {
+    console.warn('⚠️ 图表 resize 失败：图表实例不存在或已销毁')
+  }
+}
+// 销毁图表实例
+const disposeChart = () => {
+  if (myChart) {
+    myChart.off('legendselectchanged') // 移除事件监听器
+    window.removeEventListener("resize", resizeHandler) // 清理 resize 监听
+    myChart.dispose()
+    myChart = null
+  }
+}
+
 const initStationRef = (item: ChartOptions) => {
-    try {
-        myChart = eCharts.init(eChartsBoxRef.value as HTMLDivElement);
-    } catch (error) {
-        console.error('Failed to initialize ECharts:', error);
-        return;
+   try {
+    // 先销毁旧的实例
+    disposeChart()
+    
+    // 确保DOM元素存在
+    if (!eChartsBoxRef.value) {
+      console.warn('ECharts container element not found')
+      return
     }
-    // 工具函数
+    
+    // 创建新实例
+    myChart = eCharts.init(eChartsBoxRef.value as HTMLDivElement)
+  } catch (error) {
+    console.error('Failed to initialize ECharts:', error)
+    return
+  }    // 工具函数
     const getYAxisData = (data: Array<ChartSeriesData>, yAxisIndex: number) =>
         data.filter(d => d.yAxisIndex == yAxisIndex).flatMap(d => d.data).filter(val => val !== null) as number[]
     const getMax = (arr: Array<number>) =>
@@ -428,10 +459,16 @@ const initStationRef = (item: ChartOptions) => {
     }
     myChart.on('legendselectchanged', (params) => {
         if (item?.doubleY) {
-            updateChartAndCalculateMax(item, params as LegendSelectChangedEvent, myChart);
+            updateChartAndCalculateMax(item, params as LegendSelectChangedEvent, myChart!);
         }
     });
-    window.addEventListener("resize", resizeHandler)
+      window.removeEventListener("resize", resizeHandler)
+  window.addEventListener("resize", resizeHandler)
+  
+  // 初始化后立即调用一次 resize 确保尺寸正确
+  setTimeout(() => {
+    resizeHandler()
+  }, 100)
 }
 const updateChartAndCalculateMax = (item: ChartOptions, name: LegendSelectChangedEvent, myChart: eCharts.ECharts) => {
     let filteredData = item.data;
@@ -514,6 +551,8 @@ const calculateTableData = (item: ChartOptions, tableHeader: any, tableData: any
         tableData.value.shift()
     }
 }
+// 添加组件内部的 ResizeObserver
+let containerResizeObserver: ResizeObserver | null = null
 defineExpose({ resizeHandler })//暴露方法,在父组件中调用
 
 onMounted(() => {
@@ -524,9 +563,36 @@ onMounted(() => {
             calculateTableData(opt.value, eChartsTableHeader, eChartsTableData)
         }
     }
+      // 监听图表容器本身的尺寸变化
+  nextTick(() => {
+    if (eChartsBoxRef.value) {
+      containerResizeObserver = new ResizeObserver((entries) => {
+        // 使用 requestAnimationFrame 确保在浏览器重绘前执行
+        requestAnimationFrame(() => {
+          const entry = entries[0]
+          if (entry) {
+            console.log('📐 图表容器尺寸变化', {
+              宽度: entry.contentRect.width,
+              高度: entry.contentRect.height
+            })
+          }
+          if (myChart && !myChart.isDisposed()) {
+            myChart.resize()
+          }
+        })
+      })
+      containerResizeObserver.observe(eChartsBoxRef.value)
+      console.log('✅ 图表容器 ResizeObserver 已启动')
+    }
+  })
 })
+
 onUnmounted(() => {
-    window.removeEventListener("resize", resizeHandler)
-    myChart?.dispose()
+  window.removeEventListener("resize", resizeHandler)
+  if (containerResizeObserver) {
+    containerResizeObserver.disconnect()
+    containerResizeObserver = null
+  }
+  disposeChart()
 })
 </script>
