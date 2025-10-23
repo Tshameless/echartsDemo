@@ -185,31 +185,46 @@ const calcYAxisMax = (value: { max: number, min: number }) => {
 const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | null>) => {
     // 获取对侧轴的数据范围
     const validArr = arr.filter(v => v !== null) as number[];
+    
+    // 如果没有对侧数据，单独处理
     if (validArr.length === 0) {
         return value.min >= 0 ? 0 : -calcYAxisMax(value);
     }
 
     const otherMax = Math.max(...validArr);
     const otherMin = Math.min(...validArr);
-
+    console.log('对侧轴数据:', otherMax, otherMin, '当前轴数据:', value);
+    
     // 计算当前轴和对侧轴的最大值
     const currentMax = calcYAxisMax(value);
     const otherAxisMax = Math.max(Math.abs(otherMax), Math.abs(otherMin)) * 1.2;
-
-    // 计算两侧的最小值占最大值的比例
-    const currentRatio = value.min < 0 ? Math.abs(value.min) / Math.abs(value.max) : 0;
-    const otherRatio = otherMin < 0 ? Math.abs(otherMin) / Math.abs(otherMax) : 0;
-
-    // 取较大的比例作为统一比例
-    const maxRatio = Math.max(currentRatio, otherRatio);
-
-    // 如果都是正数，返回0
-    if (maxRatio === 0) {
+    
+    // 计算实际数据中负数的占比（用于对齐0点）
+    const currentDataMin = value.min < 0 ? Math.abs(value.min) * 1.2 : 0;
+    const otherDataMin = otherMin < 0 ? Math.abs(otherMin) * 1.2 : 0;
+    
+    // 计算两侧数据的0点位置比例
+    const currentZeroRatio = currentDataMin / (currentMax + currentDataMin);
+    const otherZeroRatio = otherDataMin / (otherAxisMax + otherDataMin);
+    
+    console.log('当前0点比例:', currentZeroRatio, '对侧0点比例:', otherZeroRatio);
+    
+    // 取两者中较大的比例（确保负数空间足够）
+    const targetZeroRatio = Math.max(currentZeroRatio, otherZeroRatio);
+    
+    // 如果目标比例为0，说明两侧都没有负数
+    if (targetZeroRatio === 0) {
         return 0;
     }
-
-    // 按照统一比例计算最小值
-    return -parseFloat((currentMax * maxRatio).toFixed(2));
+    
+    // 根据目标比例计算当前轴的最小值
+    // targetZeroRatio = |min| / (max + |min|)
+    // 推导：|min| = targetZeroRatio * max / (1 - targetZeroRatio)
+    const calculatedMin = targetZeroRatio * currentMax / (1 - targetZeroRatio);
+    const result = -parseFloat(calculatedMin.toFixed(2));
+    
+    console.log('计算结果 min:', result, 'max:', currentMax, '验证0点位置:', Math.abs(result) / (currentMax + Math.abs(result)));
+    return result;
 }
 
 // 初始化图表
