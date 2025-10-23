@@ -203,6 +203,7 @@ onMounted(() => {
       dataZoomShow: true,
       xName: '时间',
       deleteLastPoint: true,
+      xAlignValue: 'center',
       doubleY: true,
       yName: '把',
       yName1: '元/MWh',
@@ -225,7 +226,7 @@ onMounted(() => {
             if (n % 2 == 0) {
               return n * (-1)
             } else {
-              return n * 10
+              return n * -2
             }
           }),
           yAxisIndex: 0
@@ -240,7 +241,7 @@ onMounted(() => {
             if (n % 2 == 0) {
               return n * (-2)
             } else {
-              return n * 8
+              return n * 2
             }
           }),
           yAxisIndex: 1

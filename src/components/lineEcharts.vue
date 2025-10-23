@@ -190,7 +190,6 @@ const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | n
     if (validArr.length === 0) {
         return value.min >= 0 ? 0 : -calcYAxisMax(value);
     }
-
     const otherMax = Math.max(...validArr);
     const otherMin = Math.min(...validArr);
     console.log('对侧轴数据:', otherMax, otherMin, '当前轴数据:', value);
@@ -232,11 +231,6 @@ let myChart: echarts.ECharts | null = null
 // 定义 resize 处理函数，使用响应式方式确保总是引用最新的 chart 实例
 const resizeHandler = () => { 
   if (myChart && !myChart.isDisposed()) {
-    console.log('📊 图表 resize 被调用', {
-      容器宽度: eChartsBoxRef.value?.offsetWidth,
-      容器高度: eChartsBoxRef.value?.offsetHeight,
-      图表实例存在: !!myChart
-    })
     myChart.resize()
   } else {
     console.warn('⚠️ 图表 resize 失败：图表实例不存在或已销毁')
@@ -585,19 +579,13 @@ onMounted(() => {
         // 使用 requestAnimationFrame 确保在浏览器重绘前执行
         requestAnimationFrame(() => {
           const entry = entries[0]
-          if (entry) {
-            console.log('📐 图表容器尺寸变化', {
-              宽度: entry.contentRect.width,
-              高度: entry.contentRect.height
-            })
-          }
+
           if (myChart && !myChart.isDisposed()) {
             myChart.resize()
           }
         })
       })
       containerResizeObserver.observe(eChartsBoxRef.value)
-      console.log('✅ 图表容器 ResizeObserver 已启动')
     }
   })
 })
