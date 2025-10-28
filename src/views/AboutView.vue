@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue"
 import lineECharts from "../components/lineEcharts.vue"
-
+import dayjs from "dayjs"
 const eChartsData = ref({})
 const eChartsData2 = ref({})
 const eChartsData3 = ref({})
@@ -118,7 +118,7 @@ onMounted(() => {
     const currentIndex = ref(12)
     eChartsData3.value = {
       title: '时间',
-      timeList: Array.from(Array(24).keys()).map(n => n + 1),
+      timeList: Array.from(Array(24).keys()).map(n => dayjs().add(n, 'hours').format('HH:mm')),
       showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
@@ -129,6 +129,8 @@ onMounted(() => {
       deleteLastPoint: true,
       yName: 'MW',
       yName1: '元/MWh',
+        compensateType:'end',
+  deleteLastPoint:true,
       visualMap: currentIndex.value != -1 ? [
         {
           show: false,

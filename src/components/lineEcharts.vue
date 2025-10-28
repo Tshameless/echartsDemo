@@ -47,6 +47,7 @@
 <script lang="ts" setup>
 import { toRefs, onMounted, ref, onUnmounted, watch, nextTick } from 'vue'
 import * as eCharts from 'echarts'
+import dayjs from 'dayjs'
 // 定义颜色常量
 const itemColorArr = ['red', '#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
 
@@ -126,6 +127,7 @@ interface ChartOptions {
     showYAxis?: boolean //默认显示Y轴
     yName?: string //默认Y轴名称
     yType?: string //默认Y轴类型
+    compensateType?: string //补点类型,end:向后补点,start:向前补点,不传就是不补点,如果添加了这个参数进行了补点，且使用了表格，那么有个调用deleteLastPoint或者是deleteFirstPoint来删除首/尾点
     yAxisLabel?: AxisLabel //默认y轴标签样式，可以修改单个y轴标签的样式，也可以统一修改
     yColor?: string //默认Y轴标签颜色
     yUnitColor?: string //默认Y轴标签单位
@@ -245,7 +247,158 @@ const disposeChart = () => {
     myChart = null
   }
 }
+// 去判断是否需要向前或者是向后延申补点
+const judgeCompensateType = () => {
+  if (opt.value.compensateType === 'end') {
+    // 动态计算下一个时间点（向后）
+    const nextTime = judgeCompensateTimeType('end')
+    if (nextTime) {
+      opt.value.timeList.push(nextTime)
+      opt.value.data.forEach(item => {
+        item.data.push(null)
+      })
+    }
 
+  } else if (opt.value.compensateType === 'start') {
+    // 动态计算上一个时间点（向前）
+    const previousTime = judgeCompensateTimeType('start')
+    if (previousTime) {
+      opt.value.timeList.unshift(previousTime)
+      opt.value.data.forEach(item => {
+        item.data.unshift(null)
+      })
+    }
+
+  }
+
+}
+// 判断补点时间类型
+// direction: 'start' 向前补点, 'end' 向后补点
+const judgeCompensateTimeType = (direction: 'start' | 'end' = 'end') => {
+  const timeList = opt.value.timeList
+  if (!timeList || timeList.length < 2) return
+  
+  let firstTime: string, secondTime: string
+  
+  if (direction === 'end') {
+    // 向后补点：取最后两个时间
+    firstTime = String(timeList[timeList.length - 2])
+    secondTime = String(timeList[timeList.length - 1])
+  } else {
+    // 向前补点：取前两个时间
+    firstTime = String(timeList[0])
+    secondTime = String(timeList[1])
+  }
+  
+  // 特殊处理 24:00 格式（将其转换为 00:00 并标记需要加一天）
+  const handleSpecialTime = (time: string) => {
+    if (time === '24:00' || time === '24:00:00') {
+      return { time: time.replace('24:', '00:'), addDay: true }
+    }
+    return { time, addDay: false }
+  }
+  
+  const firstTimeInfo = handleSpecialTime(firstTime)
+  const secondTimeInfo = handleSpecialTime(secondTime)
+  
+  firstTime = firstTimeInfo.time
+  secondTime = secondTimeInfo.time
+  
+  // 检测原始时间格式
+  const timeFormat = detectTimeFormat(firstTime)
+  
+  // 判断是否为纯时间格式（无日期）
+  const isTimeOnly = /^(\d{1,2}):(\d{2})(:\d{2})?$/.test(firstTime)
+  
+  let firstDayjs, secondDayjs
+  
+  if (isTimeOnly) {
+    // 对于纯时间格式，添加临时日期进行计算
+    const baseDate = '2024-01-01'
+    firstDayjs = dayjs(`${baseDate} ${firstTime}`, `YYYY-MM-DD ${timeFormat}`)
+    secondDayjs = dayjs(`${baseDate} ${secondTime}`, `YYYY-MM-DD ${timeFormat}`)
+    
+    // 如果原始时间是 24:00，加一天
+    if (firstTimeInfo.addDay) {
+      firstDayjs = firstDayjs.add(1, 'day')
+    }
+    if (secondTimeInfo.addDay) {
+      secondDayjs = secondDayjs.add(1, 'day')
+    }
+    
+    // 处理跨天的情况
+    if (secondDayjs.isBefore(firstDayjs)) {
+      secondDayjs = secondDayjs.add(1, 'day')
+    }
+  } else {
+    // 包含日期的格式直接解析
+    firstDayjs = dayjs(firstTime, timeFormat)
+    secondDayjs = dayjs(secondTime, timeFormat)
+  }
+  
+  // 验证解析是否成功
+  if (!firstDayjs.isValid() || !secondDayjs.isValid()) {
+    console.error('时间解析失败:', { firstTime, secondTime, timeFormat })
+    return
+  }
+  
+  // 计算两个时间的差值（毫秒）
+  const diffInMilliseconds = secondDayjs.diff(firstDayjs)
+  
+  // 根据方向计算新时间
+  let newTime
+  if (direction === 'end') {
+    // 向后补点：在第二个时间上加上差值
+    newTime = secondDayjs.add(diffInMilliseconds, 'millisecond')
+  } else {
+    // 向前补点：在第一个时间上减去差值
+    newTime = firstDayjs.subtract(diffInMilliseconds, 'millisecond')
+  }
+  
+  // 返回与原格式一致的时间字符串
+  let resultTime = newTime.format(timeFormat)
+  
+  // 如果结果是第二天的 00:00 且原始格式支持 24:00，则转换回 24:00
+  if (isTimeOnly && resultTime === '00:00') {
+    const baseDate = dayjs('2024-01-01')
+    if (newTime.date() > baseDate.date()) {
+      resultTime = '24:00'
+    }
+  }
+  
+  return resultTime
+}
+
+// 检测时间格式
+const detectTimeFormat = (timeStr: string | number): string => {
+  const str = String(timeStr).trim()
+  
+  // 常见时间格式匹配（按从具体到通用的顺序）
+  if (/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}$/.test(str)) {
+    return 'YYYY-MM-DD HH:mm:ss'
+  } else if (/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}$/.test(str)) {
+    return 'YYYY-MM-DD HH:mm'
+  } else if (/^\d{4}\/\d{2}\/\d{2} \d{1,2}:\d{2}:\d{2}$/.test(str)) {
+    return 'YYYY/MM/DD HH:mm:ss'
+  } else if (/^\d{4}\/\d{2}\/\d{2} \d{1,2}:\d{2}$/.test(str)) {
+    return 'YYYY/MM/DD HH:mm'
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return 'YYYY-MM-DD'
+  } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(str)) {
+    return 'YYYY/MM/DD'
+  } else if (/^\d{2}-\d{2} \d{1,2}:\d{2}$/.test(str)) {
+    return 'MM-DD HH:mm'
+  } else if (/^\d{1,2}:\d{2}:\d{2}$/.test(str)) {
+    // 支持单双数字小时（如 "0:00:00" 或 "00:00:00"）
+    return 'HH:mm:ss'
+  } else if (/^\d{1,2}:\d{2}$/.test(str)) {
+    // 支持单双数字小时（如 "0:00" 或 "00:00"）
+    return 'HH:mm'
+  }
+  
+  // 默认返回 HH:mm 格式
+  return 'HH:mm'
+}
 const initStationRef = (item: ChartOptions) => {
    try {
     // 先销毁旧的实例
@@ -359,6 +512,8 @@ const initStationRef = (item: ChartOptions) => {
                     color: item.xColor ?? "#fff",
                     fontSize: item.xFontSize ?? "12px",
                     fontWeight: item.xFontWeight ?? "normal",
+                    showMinLabel: item.compensateType === 'start' ? true : null,  // 如果补点了强制显示第一个标签（向前补点），否则自动判断
+                    showMaxLabel: item.compensateType === 'end' ? true : null,  // 强制显示最后一个标签（向后补点），否则自动判断
                 },
                 nameTextStyle: {
                     color: item.xUnitColor ?? '#fff',
@@ -565,7 +720,11 @@ let containerResizeObserver: ResizeObserver | null = null
 defineExpose({ resizeHandler })//暴露方法,在父组件中调用
 
 onMounted(() => {
+      if(opt.value.compensateType){
+    judgeCompensateType()
+  }else{
     initStationRef(opt.value)
+  }
     if ((props.opt as any).showTable !== undefined) {
         showTable.value = (props.opt as any).showTable
         if (showTable.value) {
@@ -598,4 +757,39 @@ onUnmounted(() => {
   }
   disposeChart()
 })
+//防抖函数
+const debounce = (func: Function, delay: number) => {
+  let timer: number | null = null
+  return function (this: any, ...args: any[]) {
+    if (timer) {
+      clearTimeout(timer)
+    }
+    timer = window.setTimeout(() => {
+      func.apply(this, args)
+    }, delay)
+  }
+}
+// 防抖的图表初始化函数
+const debouncedInitChart = debounce((newVal: ChartOptions) => {
+  if (newVal && Object.keys(newVal).length > 0) {
+    showValue.value = true
+    calculateTableData(newVal, eChartsTableHeader, eChartsTableData)
+    initStationRef(newVal)
+    
+    // 图表重新初始化后，确保 resize
+    nextTick(() => {
+      setTimeout(() => {
+        if (myChart && !myChart.isDisposed()) {
+          myChart.resize()
+        }
+      }, 150)
+    })
+  }
+}, 100) // 100ms 防抖延迟
+
+watch(() => opt.value, (newVal) => {
+  // 使用防抖函数避免频繁重新初始化
+  showValue.value = true
+  debouncedInitChart(newVal)
+}, { deep: true, immediate: false }) // 添加深度监听，避免立即执行
 </script>
