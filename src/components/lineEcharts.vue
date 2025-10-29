@@ -45,7 +45,7 @@
   </div>
 </template> -->
 <script lang="ts" setup>
-import { toRefs, onMounted, ref, onUnmounted, watch, nextTick } from 'vue'
+import { toRefs, onMounted, ref, onUnmounted, watch, nextTick,computed } from 'vue'
 import * as eCharts from 'echarts'
 import dayjs from 'dayjs'
 // 定义颜色常量
@@ -177,6 +177,36 @@ const showTable = ref(false)
 let eChartsTableData = ref<Array<Record<string, any>>>([])
 const eChartsTableHeader = ref<TableColumn[]>([])
 let showValue = ref(true)
+// 使用计算属性处理补点逻辑，避免直接修改props和重复计算
+const processedOpt = computed(() => {
+  if (!opt.value.compensateType) {
+    return opt.value
+  }
+  
+  // 深拷贝避免修改原数据
+  const processed: ChartOptions = JSON.parse(JSON.stringify(opt.value))
+  
+  // 执行补点
+  if (processed.compensateType === 'end') {
+    const nextTime = judgeCompensateTimeType('end', processed.timeList)
+    if (nextTime && processed.timeList) {
+      processed.timeList.push(nextTime)
+      processed.data?.forEach(item => {
+        item.data.push(null)
+      })
+    }
+  } else if (processed.compensateType === 'start') {
+    const previousTime = judgeCompensateTimeType('start', processed.timeList)
+    if (previousTime && processed.timeList) {
+      processed.timeList.unshift(previousTime)
+      processed.data?.forEach(item => {
+        item.data.unshift(null)
+      })
+    }
+  }
+  
+  return processed
+})
 //y轴上下限计算函数
 const calcYAxisMax = (value: { max: number, min: number }) => {
     // 计算绝对值较大者的1.2倍作为最大值
@@ -247,35 +277,11 @@ const disposeChart = () => {
     myChart = null
   }
 }
-// 去判断是否需要向前或者是向后延申补点
-const judgeCompensateType = () => {
-  if (opt.value.compensateType === 'end') {
-    // 动态计算下一个时间点（向后）
-    const nextTime = judgeCompensateTimeType('end')
-    if (nextTime) {
-      opt.value.timeList.push(nextTime)
-      opt.value.data.forEach(item => {
-        item.data.push(null)
-      })
-    }
 
-  } else if (opt.value.compensateType === 'start') {
-    // 动态计算上一个时间点（向前）
-    const previousTime = judgeCompensateTimeType('start')
-    if (previousTime) {
-      opt.value.timeList.unshift(previousTime)
-      opt.value.data.forEach(item => {
-        item.data.unshift(null)
-      })
-    }
-
-  }
-
-}
 // 判断补点时间类型
 // direction: 'start' 向前补点, 'end' 向后补点
-const judgeCompensateTimeType = (direction: 'start' | 'end' = 'end') => {
-  const timeList = opt.value.timeList
+// 接收 timeList 作为参数，避免直接读取 props
+const judgeCompensateTimeType = (direction: 'start' | 'end' = 'end', timeList?: Array<string | number>) => {
   if (!timeList || timeList.length < 2) return
   
   let firstTime: string, secondTime: string
@@ -401,17 +407,21 @@ const detectTimeFormat = (timeStr: string | number): string => {
 }
 const initStationRef = (item: ChartOptions) => {
    try {
-    // 先销毁旧的实例
-    disposeChart()
-    
-    // 确保DOM元素存在
-    if (!eChartsBoxRef.value) {
-      console.warn('ECharts container element not found')
-      return
+    // 只在图表不存在或已销毁时才创建新实例
+    if (!myChart || myChart.isDisposed()) {
+      // 确保DOM元素存在
+      if (!eChartsBoxRef.value) {
+        console.warn('ECharts container element not found')
+        return
+      }
+      
+      // 创建新实例
+      myChart = eCharts.init(eChartsBoxRef.value as HTMLDivElement)
+      
+      // 添加 resize 事件监听
+      window.removeEventListener("resize", resizeHandler)
+      window.addEventListener("resize", resizeHandler)
     }
-    
-    // 创建新实例
-    myChart = eCharts.init(eChartsBoxRef.value as HTMLDivElement)
   } catch (error) {
     console.error('Failed to initialize ECharts:', error)
     return
@@ -621,13 +631,14 @@ const initStationRef = (item: ChartOptions) => {
             series: item.data
         }), true)
     }
+ // 只在首次初始化时绑定事件，避免重复绑定
+  if (!myChart.getOption()?.series || (myChart.getOption()?.series as any[]).length === 0) {
     myChart.on('legendselectchanged', (params) => {
-        if (item?.doubleY) {
-            updateChartAndCalculateMax(item, params as LegendSelectChangedEvent, myChart!);
-        }
+      if (item?.doubleY) {
+        updateChartAndCalculateMax(item, params as LegendSelectChangedEvent, myChart!);
+      }
     });
-      window.removeEventListener("resize", resizeHandler)
-  window.addEventListener("resize", resizeHandler)
+  }
   
   // 初始化后立即调用一次 resize 确保尺寸正确
   setTimeout(() => {
@@ -720,25 +731,23 @@ let containerResizeObserver: ResizeObserver | null = null
 defineExpose({ resizeHandler })//暴露方法,在父组件中调用
 
 onMounted(() => {
-      if(opt.value.compensateType){
-    judgeCompensateType()
-  }else{
-    initStationRef(opt.value)
-  }
-    if ((props.opt as any).showTable !== undefined) {
-        showTable.value = (props.opt as any).showTable
-        if (showTable.value) {
-            calculateTableData(opt.value, eChartsTableHeader, eChartsTableData)
-        }
+  // 使用计算属性 processedOpt，自动处理补点逻辑
+  initStationRef(processedOpt.value)
+  
+  if ((props.opt as any).showTable !== undefined) {
+    showTable.value = (props.opt as any).showTable
+    if (showTable.value) {
+      calculateTableData(processedOpt.value, eChartsTableHeader, eChartsTableData)
     }
-      // 监听图表容器本身的尺寸变化
+  }
+  
+  // 监听图表容器本身的尺寸变化
   nextTick(() => {
     if (eChartsBoxRef.value) {
       containerResizeObserver = new ResizeObserver((entries) => {
         // 使用 requestAnimationFrame 确保在浏览器重绘前执行
         requestAnimationFrame(() => {
           const entry = entries[0]
-
           if (myChart && !myChart.isDisposed()) {
             myChart.resize()
           }
@@ -769,25 +778,31 @@ const debounce = (func: Function, delay: number) => {
     }, delay)
   }
 }
-// 防抖的图表初始化函数
+// 防抖的图表更新函数（不销毁重建，只更新配置）
 const debouncedInitChart = debounce((newVal: ChartOptions) => {
   if (newVal && Object.keys(newVal).length > 0) {
     showValue.value = true
     calculateTableData(newVal, eChartsTableHeader, eChartsTableData)
     initStationRef(newVal)
     
-    // 图表重新初始化后，确保 resize
+    // 图表更新后，确保 resize
     nextTick(() => {
       setTimeout(() => {
         if (myChart && !myChart.isDisposed()) {
           myChart.resize()
         }
-      }, 150)
+      }, 50)
     })
   }
-}, 100) // 100ms 防抖延迟
+}, 50) // 50ms 防抖延迟，减少延迟提升响应速度
 
 watch(() => opt.value, (newVal) => {
+  // 使用防抖函数避免频繁重新初始化
+  showValue.value = true
+  debouncedInitChart(newVal)
+}, { deep: true, immediate: false }) // 添加深度监听，避免立即执行
+// 监听计算属性 processedOpt 而不是 opt.value，自动处理补点逻辑
+watch(() => processedOpt.value, (newVal) => {
   // 使用防抖函数避免频繁重新初始化
   showValue.value = true
   debouncedInitChart(newVal)
