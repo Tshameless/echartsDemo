@@ -623,7 +623,7 @@ const initStationRef = (item: ChartOptions) => {
                         color: item.yColor ?? "#fff",
                         fontSize: item.yFontSize ?? "12px",
                         fontWeight: item.yFontWeight ?? "normal",
-                        formatter: item.yFormatter || (value => value.toFixed(item.yAccuracy ?? 0)),
+                        formatter: item.yFormatter ,
                     },
                     nameTextStyle: { color: item.yUnitColor ?? '#fff' }
                 },
