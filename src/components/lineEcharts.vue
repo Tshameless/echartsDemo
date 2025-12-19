@@ -82,6 +82,9 @@ interface ChartOptions {
     tooltipFormatter?: (params: any) => string //默认提示格式化器,对于有特殊需求时，可自定义，如果需要修改组件的统一提示，请修改defaultTooltipFormatter函数
     legendshowValue?: boolean //默认显示图例
     legend?: object //图例配置
+    legendColor?: string //默认图例颜色
+    legendFontSize?: number //默认图例字体大小
+    legendFontWeight?: number //默认图例字体粗细
     legendLocation?: string //默认图例水平方向位置
     legendTop?: string //默认图例距离顶部
     legendOrient?: string //默认图例方向
@@ -477,11 +480,12 @@ const initStationRef = (item: ChartOptions) => {
             itemWidth: item.legendItemWidth ?? 30,
             itemHeight: item.legendItemHeight ?? 14,
             textStyle: {
-                // color: itemColorArr,
-                color: '#fff',
-                fontSize: 12,
+                // color: '#000',
+                color:item.legendColor ?? '#000',
+                fontSize: item.legendFontSize ?? 12,
+                fontWeight: item.legendFontWeight ?? 400,
                 rich: item.legendRich ?? {
-                    one: { width: 60, height: 16, fontSize: 12, fontWeight: 700 },
+                    one: { width: 60, height: 16, fontSize: 12, fontWeight: 400 },
                 }
             },
             formatter: item.legendFormatter ?? (name => `{one|${name}}`),
