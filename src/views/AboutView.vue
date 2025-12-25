@@ -51,7 +51,7 @@ onMounted(() => {
         containLabel: true
       },
       yName: 'MW',
-      data: [
+      series: [
         {
           name: "负荷设备功率",
           type: "line",
@@ -83,7 +83,7 @@ onMounted(() => {
       deleteFirstPoint: true,
       yName: 'MW',
       yName1: '元/MWh',
-      data: [
+      series: [
         {
           name: "负荷设备功率",
           type: "line",
@@ -126,11 +126,10 @@ onMounted(() => {
       dataZoomShow: true,
       xAlignValue: 'center',
       xName: '时间',
-      deleteLastPoint: true,
+      // deleteLastPoint: true,
       yName: 'MW',
       yName1: '元/MWh',
         compensateType:'end',
-  deleteLastPoint:true,
       visualMap: currentIndex.value != -1 ? [
         {
           show: false,
@@ -165,7 +164,7 @@ onMounted(() => {
           ]
         }
       ] : [],
-      data: [
+      series: [
         {
           name: "负荷设备功率",
           type: "line",
@@ -184,13 +183,10 @@ onMounted(() => {
         {
           name: "实时负荷",
           type: "line",
+          step:'end',
           tableUnit: '(元/MWh)',
           data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
-            if (n % 2 == 0) {
-              return n * (-3)
-            } else {
-              return n * 10
-            }
+            return n * 5
           }),
           yAxisIndex: 1
         },
@@ -217,7 +213,7 @@ onMounted(() => {
                   </div>`;
         }).join('<br>');
       },
-      data: [
+      series: [
         {
           name: "负荷设备功率",
           type: "line",
@@ -262,7 +258,7 @@ onMounted(() => {
       yName: 'kW',
       yName1: '%',
       xAlignValue: true,
-      data: [
+      series: [
         {
           name: '运行功率',
           data: Array.from({ length: 50 }, (_, i) => (Math.random() * 2000 - 1200).toFixed(0)),

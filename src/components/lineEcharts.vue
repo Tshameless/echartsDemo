@@ -149,7 +149,7 @@ interface ChartOptions {
     yFontWeight1?: string
     yAccuracy1?: number //默认Y轴1精度
     yNameGapOne?: number //默认Y轴1名称距离顶部
-    data?: Array<ChartSeriesData> //默认数据
+    series?: Array<ChartSeriesData> //默认数据
     title?: string //默认图表标题
     deleteLastPoint?: boolean //删除最后一个数据点
     deleteFirstPoint?: boolean //删除第一个数据点
@@ -192,9 +192,10 @@ const processedOpt = computed(() => {
   // 执行补点
   if (processed.compensateType === 'end') {
     const nextTime = judgeCompensateTimeType('end', processed.timeList)
+    console.log('补点时间:', nextTime)
     if (nextTime && processed.timeList) {
       processed.timeList.push(nextTime)
-      processed.data?.forEach(item => {
+      processed.series?.forEach(item => {
         item.data.push(null)
       })
     }
@@ -202,12 +203,12 @@ const processedOpt = computed(() => {
     const previousTime = judgeCompensateTimeType('start', processed.timeList)
     if (previousTime && processed.timeList) {
       processed.timeList.unshift(previousTime)
-      processed.data?.forEach(item => {
+      processed.series?.forEach(item => {
         item.data.unshift(null)
       })
     }
   }
-  
+  console.log('处理后的数据:', processed)
   return processed
 })
 //y轴上下限计算函数
@@ -227,8 +228,6 @@ const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | n
     }
     const otherMax = Math.max(...validArr);
     const otherMin = Math.min(...validArr);
-    console.log('对侧轴数据:', otherMax, otherMin, '当前轴数据:', value);
-    
     // 计算当前轴和对侧轴的最大值
     const currentMax = calcYAxisMax(value);
     const otherAxisMax = Math.max(Math.abs(otherMax), Math.abs(otherMin)) * 1.2;
@@ -241,7 +240,6 @@ const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | n
     const currentZeroRatio = currentDataMin / (currentMax + currentDataMin);
     const otherZeroRatio = otherDataMin / (otherAxisMax + otherDataMin);
     
-    console.log('当前0点比例:', currentZeroRatio, '对侧0点比例:', otherZeroRatio);
     
     // 取两者中较大的比例（确保负数空间足够）
     const targetZeroRatio = Math.max(currentZeroRatio, otherZeroRatio);
@@ -257,7 +255,6 @@ const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | n
     const calculatedMin = targetZeroRatio * currentMax / (1 - targetZeroRatio);
     const result = -parseFloat(calculatedMin.toFixed(2));
     
-    console.log('计算结果 min:', result, 'max:', currentMax, '验证0点位置:', Math.abs(result) / (currentMax + Math.abs(result)));
     return result;
 }
 
@@ -448,9 +445,9 @@ const initStationRef = (item: ChartOptions) => {
         result += (params as any[]).map((param: any) => {
             let yUnit = ''
             if (isDoubleY) {
-                const series = item.data?.find(d => d.name === param.seriesName)
-                if (series) {
-                    yUnit = (series.yAxisIndex ?? 1) === 0 ? (item.yName?.includes('：') ? item.yName.split('：')[1] || '' : item.yName || '') : (item.yName1?.includes('：') ? item.yName1.split('：')[1] || '' : item.yName1 || '')
+                const seriesItem = item.series?.find(d => d.name === param.seriesName)
+                if (seriesItem) {
+                    yUnit = (seriesItem.yAxisIndex ?? 1) === 0 ? (item.yName?.includes('：') ? item.yName.split('：')[1] || '' : item.yName || '') : (item.yName1?.includes('：') ? item.yName1.split('：')[1] || '' : item.yName1 || '')
                 }
             } else {
                 yUnit = item.yName?.includes('：') ? (item.yName.split('：')[1] || '') : (item.yName || '');
@@ -542,8 +539,8 @@ const initStationRef = (item: ChartOptions) => {
     })
 
     if (item?.doubleY) {//双Y轴
-        const yAxisIndexZeroArr = getYAxisData(item.data!, 0)
-        const yAxisIndexOneArr = getYAxisData(item.data!, 1)
+        const yAxisIndexZeroArr = getYAxisData(item.series!, 0)
+        const yAxisIndexOneArr = getYAxisData(item.series!, 1)
         myChart.setOption(getCommonOption(item, {
             yAxis: [
                 {
@@ -604,7 +601,7 @@ const initStationRef = (item: ChartOptions) => {
                     nameTextStyle: { color: '#fff' }
                 },
             ],
-            series: item.data
+            series: item.series
         }), true)
     } else {// 单轴
         myChart.setOption(getCommonOption(item, {
@@ -632,7 +629,7 @@ const initStationRef = (item: ChartOptions) => {
                     nameTextStyle: { color: item.yUnitColor ?? '#fff' }
                 },
             ],
-            series: item.data
+            series: item.series
         }), true)
     }
  // 只在首次初始化时绑定事件，避免重复绑定
@@ -650,15 +647,15 @@ const initStationRef = (item: ChartOptions) => {
   }, 100)
 }
 const updateChartAndCalculateMax = (item: ChartOptions, name: LegendSelectChangedEvent, myChart: eCharts.ECharts) => {
-    let filteredData = item.data;
+    let filteredData = item.series;
     if (name) {
         const currentSelected = Object.keys(name.selected).filter(key => name.selected[key]);
-        filteredData = item.data?.filter(dataItem => currentSelected.includes(dataItem.name));
+        filteredData = item.series?.filter(dataItem => currentSelected.includes(dataItem.name));
     }
     myChart.setOption({
         series: filteredData
     });
-    calculateMax({ ...item, data: filteredData }, myChart);
+    calculateMax({ ...item, series: filteredData }, myChart);
 };
 //计算y轴上下限
 const calculateMax = (item: ChartOptions, myChart: eCharts.ECharts) => {
@@ -666,16 +663,16 @@ const calculateMax = (item: ChartOptions, myChart: eCharts.ECharts) => {
     let yAxisIndexOneArr: Array<number | null> = []
 
     // // 计算所有数据的最大值和最小值
-    // item.data?.map(seriesData => {
+    // item.series?.map(seriesData => {
     //   if (seriesData.yAxisIndex == 0) {
     //     yAxisIndexZeroArr.push(...seriesData.data);
     //   } else if (seriesData.yAxisIndex == 1) {
     //     yAxisIndexOneArr.push(...seriesData.data);
     //   }
     // });
-    // const yAxisIndexZeroArr = item.data?.filter(d => d.yAxisIndex === 0).flatMap(d => d.data) || [];
-    // const yAxisIndexOneArr = item.data?.filter(d => d.yAxisIndex === 1).flatMap(d => d.data) || [];
-    item.data?.forEach(seriesData => {
+    // const yAxisIndexZeroArr = item.series?.filter(d => d.yAxisIndex === 0).flatMap(d => d.data) || [];
+    // const yAxisIndexOneArr = item.series?.filter(d => d.yAxisIndex === 1).flatMap(d => d.data) || [];
+    item.series?.forEach(seriesData => {
         if (seriesData.yAxisIndex === 0) {
             yAxisIndexZeroArr = yAxisIndexZeroArr.concat(seriesData.data);
         } else if (seriesData.yAxisIndex === 1) {
@@ -710,7 +707,7 @@ const calculateTableData = (item: ChartOptions, tableHeader: any, tableData: any
     tableData.value = item.timeList?.map(time => ({ timeList: time })) || []
 
     // 遍历数据，生成表头和表体
-    item.data?.forEach(({ name, tableUnit, data }) => {
+    item.series?.forEach(({ name, tableUnit, data }) => {
         const updatedName = tableUnit ? `${name}${tableUnit}` : name
         tableHeader.value.push({
             title: updatedName,
