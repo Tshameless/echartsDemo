@@ -519,6 +519,15 @@ const initStationRef = (item: ChartOptions) => {
                 type: item.xType ?? 'category',
                 boundaryGap: item.boundaryGap ?? false,
                 data: item.timeList,
+            // 确保 x 轴轴线和刻度线可见
+            axisLine: {
+              show: true,
+              lineStyle: { color: item.xColor ?? '#fff' }
+            },
+            axisTick: {
+              show: true,
+              lineStyle: { color: item.xColor ?? '#fff' }
+            },
                 axisLabel: item.xAxisLabel ?? {
                     color: item.xColor ?? "#fff",
                     fontSize: item.xFontSize ?? "12px",
@@ -549,6 +558,15 @@ const initStationRef = (item: ChartOptions) => {
                     type: item.yType ?? "value",
                     nameGap: item.yNameGap ?? 20,
                     nameRotate: 0,
+                  // 确保 Y 轴轴线（竖线）和刻度可见
+                  axisLine: {
+                    show: true,
+                    lineStyle: { color: item.yColor ?? '#fff' }
+                  },
+                  axisTick: {
+                    show: true,
+                    lineStyle: { color: item.yColor ?? '#fff' }
+                  },
                     // max: getMax(yAxisIndexZeroArr),
                     // min: getMin(yAxisIndexZeroArr),
                     max: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMax(value) : null,
@@ -577,6 +595,15 @@ const initStationRef = (item: ChartOptions) => {
                     type: item.yType1 ?? "value",
                     nameGap: item.yNameGapOne ?? 20,
                     nameRotate: 0,
+                  // 确保 Y 轴轴线（竖线）和刻度可见
+                  axisLine: {
+                    show: true,
+                    lineStyle: { color: item.yColor1 ?? '#fff' }
+                  },
+                  axisTick: {
+                    show: true,
+                    lineStyle: { color: item.yColor1 ?? '#fff' }
+                  },
                     // max: getMax(yAxisIndexOneArr),
                     // min: getMin(yAxisIndexOneArr),
                     max: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMax(value) : null,
@@ -612,6 +639,15 @@ const initStationRef = (item: ChartOptions) => {
                     type: item.yType ?? "value",
                     nameGap: item.yNameGap ?? 20,
                     nameRotate: 0,
+            // 确保 Y 轴轴线（竖线）和刻度可见
+            axisLine: {
+              show: true,
+              lineStyle: { color: item.yColor ?? '#fff' }
+            },
+            axisTick: {
+              show: true,
+              lineStyle: { color: item.yColor ?? '#fff' }
+            },
                     splitLine: {
                         lineStyle: {
                             type: 'dashed',
