@@ -21,10 +21,10 @@
 import { toRefs, onMounted, ref, onUnmounted, watch, nextTick, computed, shallowRef } from 'vue'
 import * as eCharts from 'echarts'
 import { cloneDeep } from 'lodash-es'
-import type { ChartOptions, LegendSelectChangedEvent } from '@/types/chart'
-import { calcYAxisMax, calcYAxisMin, judgeCompensateTimeType, getYAxisData } from '@/utils/chartUtils'
-import { useChartResize } from '@/composables/useChartResize'
-import { useChartTable } from '@/composables/useChartTable'
+import type { ChartOptions, LegendSelectChangedEvent } from './types'
+import { calcYAxisMax, calcYAxisMin, judgeCompensateTimeType, getYAxisData } from './utils'
+import { useChartResize } from './useChartResize'
+import { useChartTable } from './useChartTable'
 
 // 定义颜色常量
 const itemColorArr = ['red', '#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
@@ -51,6 +51,34 @@ const { resize } = useChartResize(myChart, eChartsBoxRef)
 const { showTable, tableData, tableHeader, showValue, calculateTableData } = useChartTable()
 
 
+// 辅助函数：计算补点值
+const calculateCompensateValue = (type: 'start' | 'end', list: Array<string | number> | undefined) => {
+    if (!list || list.length < 2) return undefined
+
+    const idx1 = type === 'end' ? list.length - 2 : 0
+    const idx2 = type === 'end' ? list.length - 1 : 1
+
+    const val1 = list[idx1]
+    const val2 = list[idx2]
+
+    // 判断是否为纯数字（排除日期格式字符串）
+    const isNumeric = (val: string | number) => {
+        if (typeof val === 'number') return true
+        return !isNaN(Number(val)) && !/[-/:]/.test(String(val))
+    }
+
+    if (isNumeric(val1) && isNumeric(val2)) {
+        const num1 = Number(val1)
+        const num2 = Number(val2)
+        const diff = num2 - num1
+        const result = type === 'end' ? num2 + diff : num1 - diff
+        // 保持原数据类型一致性
+        return typeof val1 === 'string' ? String(result) : result
+    }
+
+    return judgeCompensateTimeType(type, list)
+}
+
 // 使用计算属性处理补点逻辑，避免直接修改props和重复计算
 const processedOpt = computed(() => {
     if (!opt.value.compensateType) {
@@ -62,16 +90,16 @@ const processedOpt = computed(() => {
 
     // 执行补点
     if (processed.compensateType === 'end') {
-        const nextTime = judgeCompensateTimeType('end', processed.timeList)
-        if (nextTime && processed.timeList) {
+        const nextTime = calculateCompensateValue('end', processed.timeList)
+        if (nextTime !== undefined && processed.timeList) {
             processed.timeList.push(nextTime)
             processed.series?.forEach(item => {
                 item.data.push(null)
             })
         }
     } else if (processed.compensateType === 'start') {
-        const previousTime = judgeCompensateTimeType('start', processed.timeList)
-        if (previousTime && processed.timeList) {
+        const previousTime = calculateCompensateValue('start', processed.timeList)
+        if (previousTime !== undefined && processed.timeList) {
             processed.timeList.unshift(previousTime)
             processed.series?.forEach(item => {
                 item.data.unshift(null)
@@ -468,4 +496,3 @@ watch(() => processedOpt.value, (newVal) => {
     }
 }, { deep: true, immediate: false })
 </script>
- 

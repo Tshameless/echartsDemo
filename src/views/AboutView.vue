@@ -24,7 +24,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue"
-import lineECharts from "../components/lineEcharts.vue"
+import lineECharts from "../components/lineEcharts/index.vue"
 import dayjs from "dayjs"
 const eChartsData = ref({})
 const eChartsData2 = ref({})
@@ -77,7 +77,7 @@ onMounted(() => {
     }
     eChartsData2.value = {
       title: '时间',
-      timeList: Array.from(Array(25).keys()).map(n => n),
+      timeList: Array.from(Array(24).keys()).map(n => n),
       showTable: true,
       boundaryGap: true,
       doubleY: true,
@@ -86,11 +86,12 @@ onMounted(() => {
       deleteFirstPoint: true,
       yName: 'MW',
       yName1: '元/MWh',
+      compensateType:'end',
       series: [
         {
           name: "负荷设备功率",
           type: "line",
-          step: "start",
+          step: "end",
           // symbol: 'none',//为什么和这个有关
           tableUnit: '(MW)',
           data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
@@ -107,6 +108,7 @@ onMounted(() => {
           type: "line",
           barWidth: "10",
           tableUnit: '(元/MWh)',
+          step: "end",
           data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
             if (n % 2 == 0) {
               return n * (-2)
