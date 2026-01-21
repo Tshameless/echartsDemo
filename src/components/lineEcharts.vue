@@ -17,35 +17,8 @@
         </div>
     </div>
 </template>
-<!-- <template>
-  <div style="position: relative;border: 1px solid transparent;">
-    <div class="station-chart-header">
-      <div class="chart-controls">
-        <div class="chart-switch-group" v-if="showTable">
-          <div class="chart-switch-btn" :class="{ active: showValue === true }" @click="showValue = !showValue">
-            <span>图</span>
-          </div>
-          <span class="chart-switch-divider">
-            /
-          </span>
-          <div class="chart-switch-btn" :class="{ active: showValue === false }" @click="showValue = !showValue">
-            <span>表</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="clearfix">
-      <div v-show="showValue" ref="eChartsBoxRef" style="width: 100%;" :style="{ height: `${height}px` }"
-        :max-height="`${height}px`"></div>
-      <el-table v-show="!showValue" :data="eChartsTableData" style="width: 100%;" :style="{ height: `${height}px` }"
-        :stripe="true" :border="true">
-        <el-table-column :prop="item.key" :label="item.title" v-for="item in eChartsTableHeader" />
-      </el-table>
-    </div>
-  </div>
-</template> -->
 <script lang="ts" setup>
-import { toRefs, onMounted, ref, onUnmounted, watch, nextTick,computed } from 'vue'
+import { toRefs, onMounted, ref, onUnmounted, watch, nextTick, computed, type Ref } from 'vue'
 import * as eCharts from 'echarts'
 import dayjs from 'dayjs'
 // 定义颜色常量
@@ -98,17 +71,17 @@ interface ChartOptions {
     dataZoomStart?: number, //默认数据缩放开始
     dataZoomEnd?: number, //默认数据缩放结束
     dataZoomHeight?: number //默认数据缩放高度
-  tooltip?: { //默认提示框
-    trigger?: string //默认提示框触发方式
-    axisPointer?: { //默认提示框坐标轴指示器
-      type?: string //默认提示框坐标轴指示器类型
+    tooltip?: { //默认提示框
+        trigger?: string //默认提示框触发方式
+        axisPointer?: { //默认提示框坐标轴指示器
+            type?: string //默认提示框坐标轴指示器类型
+        }
     }
-  }
     grid?: { //默认图表区域
-    top?: string | number //默认图表区域距离顶部
-    left?: string | number //默认图表区域距离左侧
-    right?: string | number //默认图表区域距离右侧
-    bottom?: string | number //默认图表区域距离底部
+        top?: string | number //默认图表区域距离顶部
+        left?: string | number //默认图表区域距离左侧
+        right?: string | number //默认图表区域距离右侧
+        bottom?: string | number //默认图表区域距离底部
         containLabel?: boolean //默认图表区域是否包含标签
     }
     xAxis?: Array<any> //默认X轴，可以自定义整个X轴，也可以修改单个X轴的属性
@@ -117,7 +90,7 @@ interface ChartOptions {
     xType?: string //默认X轴类型
     boundaryGap?: boolean //默认X轴是否间距
     xAxisLabel?: AxisLabel //默认X轴标签样式，可以修改单个X轴标签的样式，也可以统一修改
-  timeList?: Array<string | number> //默认时间轴
+    timeList?: Array<string | number> //默认时间轴
     xColor?: string //默认X轴标签颜色
     xUnitColor?: string //默认X轴标签单位
     xFontSize?: string //默认X轴标签字体大小
@@ -182,34 +155,32 @@ const eChartsTableHeader = ref<TableColumn[]>([])
 let showValue = ref(true)
 // 使用计算属性处理补点逻辑，避免直接修改props和重复计算
 const processedOpt = computed(() => {
-  if (!opt.value.compensateType) {
-    return opt.value
-  }
-  
-  // 深拷贝避免修改原数据
-  const processed: ChartOptions = JSON.parse(JSON.stringify(opt.value))
-  
-  // 执行补点
-  if (processed.compensateType === 'end') {
-    const nextTime = judgeCompensateTimeType('end', processed.timeList)
-    console.log('补点时间:', nextTime)
-    if (nextTime && processed.timeList) {
-      processed.timeList.push(nextTime)
-      processed.series?.forEach(item => {
-        item.data.push(null)
-      })
+    if (!opt.value.compensateType) {
+        return opt.value
     }
-  } else if (processed.compensateType === 'start') {
-    const previousTime = judgeCompensateTimeType('start', processed.timeList)
-    if (previousTime && processed.timeList) {
-      processed.timeList.unshift(previousTime)
-      processed.series?.forEach(item => {
-        item.data.unshift(null)
-      })
+
+    // 深拷贝避免修改原数据
+    const processed: ChartOptions = JSON.parse(JSON.stringify(opt.value))
+
+    // 执行补点
+    if (processed.compensateType === 'end') {
+        const nextTime = judgeCompensateTimeType('end', processed.timeList)
+        if (nextTime && processed.timeList) {
+            processed.timeList.push(nextTime)
+            processed.series?.forEach(item => {
+                item.data.push(null)
+            })
+        }
+    } else if (processed.compensateType === 'start') {
+        const previousTime = judgeCompensateTimeType('start', processed.timeList)
+        if (previousTime && processed.timeList) {
+            processed.timeList.unshift(previousTime)
+            processed.series?.forEach(item => {
+                item.data.unshift(null)
+            })
+        }
     }
-  }
-  console.log('处理后的数据:', processed)
-  return processed
+    return processed
 })
 //y轴上下限计算函数
 const calcYAxisMax = (value: { max: number, min: number }) => {
@@ -221,7 +192,7 @@ const calcYAxisMax = (value: { max: number, min: number }) => {
 const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | null>) => {
     // 获取对侧轴的数据范围
     const validArr = arr.filter(v => v !== null) as number[];
-    
+
     // 如果没有对侧数据，单独处理
     if (validArr.length === 0) {
         return value.min >= 0 ? 0 : -calcYAxisMax(value);
@@ -231,457 +202,479 @@ const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | n
     // 计算当前轴和对侧轴的最大值
     const currentMax = calcYAxisMax(value);
     const otherAxisMax = Math.max(Math.abs(otherMax), Math.abs(otherMin)) * 1.2;
-    
+
     // 计算实际数据中负数的占比（用于对齐0点）
     const currentDataMin = value.min < 0 ? Math.abs(value.min) * 1.2 : 0;
     const otherDataMin = otherMin < 0 ? Math.abs(otherMin) * 1.2 : 0;
-    
+
     // 计算两侧数据的0点位置比例
     const currentZeroRatio = currentDataMin / (currentMax + currentDataMin);
     const otherZeroRatio = otherDataMin / (otherAxisMax + otherDataMin);
-    
-    
+
+
     // 取两者中较大的比例（确保负数空间足够）
     const targetZeroRatio = Math.max(currentZeroRatio, otherZeroRatio);
-    
+
     // 如果目标比例为0，说明两侧都没有负数
     if (targetZeroRatio === 0) {
         return 0;
     }
-    
+
     // 根据目标比例计算当前轴的最小值
     // targetZeroRatio = |min| / (max + |min|)
     // 推导：|min| = targetZeroRatio * max / (1 - targetZeroRatio)
     const calculatedMin = targetZeroRatio * currentMax / (1 - targetZeroRatio);
     const result = -parseFloat(calculatedMin.toFixed(2));
-    
+
     return result;
 }
 
 // 初始化图表
-let myChart: echarts.ECharts | null = null
+let myChart: eCharts.ECharts | null = null
+
 // 定义 resize 处理函数，使用响应式方式确保总是引用最新的 chart 实例
-const resizeHandler = () => { 
-  if (myChart && !myChart.isDisposed()) {
-    myChart.resize()
-  } else {
-    console.warn('⚠️ 图表 resize 失败：图表实例不存在或已销毁')
-  }
+const resizeHandler = () => {
+    if (myChart && !myChart.isDisposed()) {
+        myChart.resize()
+    } else {
+        console.warn('⚠️ 图表 resize 失败：图表实例不存在或已销毁')
+    }
 }
+
 // 销毁图表实例
 const disposeChart = () => {
-  if (myChart) {
-    myChart.off('legendselectchanged') // 移除事件监听器
-    window.removeEventListener("resize", resizeHandler) // 清理 resize 监听
-    myChart.dispose()
-    myChart = null
-  }
+    if (myChart) {
+        myChart.off('legendselectchanged') // 移除事件监听器
+        window.removeEventListener("resize", resizeHandler) // 清理 resize 监听
+        myChart.dispose()
+        myChart = null
+    }
 }
 
 // 判断补点时间类型
 // direction: 'start' 向前补点, 'end' 向后补点
 // 接收 timeList 作为参数，避免直接读取 props
-const judgeCompensateTimeType = (direction: 'start' | 'end' = 'end', timeList?: Array<string | number>) => {
-  if (!timeList || timeList.length < 2) return
-  
-  let firstTime: string, secondTime: string
-  
-  if (direction === 'end') {
-    // 向后补点：取最后两个时间
-    firstTime = String(timeList[timeList.length - 2])
-    secondTime = String(timeList[timeList.length - 1])
-  } else {
-    // 向前补点：取前两个时间
-    firstTime = String(timeList[0])
-    secondTime = String(timeList[1])
-  }
-  
-  // 特殊处理 24:00 格式（将其转换为 00:00 并标记需要加一天）
-  const handleSpecialTime = (time: string) => {
-    if (time === '24:00' || time === '24:00:00') {
-      return { time: time.replace('24:', '00:'), addDay: true }
+const judgeCompensateTimeType = (direction: 'start' | 'end' = 'end', timeList?: Array<string | number>): string | undefined => {
+    if (!timeList || timeList.length < 2) return undefined
+
+    let firstTime: string, secondTime: string
+
+    if (direction === 'end') {
+        // 向后补点：取最后两个时间
+        firstTime = String(timeList[timeList.length - 2])
+        secondTime = String(timeList[timeList.length - 1])
+    } else {
+        // 向前补点：取前两个时间
+        firstTime = String(timeList[0])
+        secondTime = String(timeList[1])
     }
-    return { time, addDay: false }
-  }
-  
-  const firstTimeInfo = handleSpecialTime(firstTime)
-  const secondTimeInfo = handleSpecialTime(secondTime)
-  
-  firstTime = firstTimeInfo.time
-  secondTime = secondTimeInfo.time
-  
-  // 检测原始时间格式
-  const timeFormat = detectTimeFormat(firstTime)
-  
-  // 判断是否为纯时间格式（无日期）
-  const isTimeOnly = /^(\d{1,2}):(\d{2})(:\d{2})?$/.test(firstTime)
-  
-  let firstDayjs, secondDayjs
-  
-  if (isTimeOnly) {
-    // 对于纯时间格式，添加临时日期进行计算
-    const baseDate = '2024-01-01'
-    firstDayjs = dayjs(`${baseDate} ${firstTime}`, `YYYY-MM-DD ${timeFormat}`)
-    secondDayjs = dayjs(`${baseDate} ${secondTime}`, `YYYY-MM-DD ${timeFormat}`)
-    
-    // 如果原始时间是 24:00，加一天
-    if (firstTimeInfo.addDay) {
-      firstDayjs = firstDayjs.add(1, 'day')
+
+    // 特殊处理 24:00 格式（将其转换为 00:00 并标记需要加一天）
+    const handleSpecialTime = (time: string): { time: string; addDay: boolean } => {
+        if (time === '24:00' || time === '24:00:00') {
+            return { time: time.replace('24:', '00:'), addDay: true }
+        }
+        return { time, addDay: false }
     }
-    if (secondTimeInfo.addDay) {
-      secondDayjs = secondDayjs.add(1, 'day')
+
+    const firstTimeInfo = handleSpecialTime(firstTime)
+    const secondTimeInfo = handleSpecialTime(secondTime)
+
+    firstTime = firstTimeInfo.time
+    secondTime = secondTimeInfo.time
+
+    // 检测原始时间格式
+    const timeFormat = detectTimeFormat(firstTime)
+
+    // 判断是否为纯时间格式（无日期）
+    const isTimeOnly = /^(\d{1,2}):(\d{2})(:\d{2})?$/.test(firstTime)
+
+    let firstDayjs: dayjs.Dayjs, secondDayjs: dayjs.Dayjs
+
+    if (isTimeOnly) {
+        // 对于纯时间格式，添加临时日期进行计算
+        const baseDate = '2024-01-01'
+        firstDayjs = dayjs(`${baseDate} ${firstTime}`, `YYYY-MM-DD ${timeFormat}`)
+        secondDayjs = dayjs(`${baseDate} ${secondTime}`, `YYYY-MM-DD ${timeFormat}`)
+
+        // 如果原始时间是 24:00，加一天
+        if (firstTimeInfo.addDay) {
+            firstDayjs = firstDayjs.add(1, 'day')
+        }
+        if (secondTimeInfo.addDay) {
+            secondDayjs = secondDayjs.add(1, 'day')
+        }
+
+        // 处理跨天的情况
+        if (secondDayjs.isBefore(firstDayjs)) {
+            secondDayjs = secondDayjs.add(1, 'day')
+        }
+    } else {
+        // 包含日期的格式直接解析
+        firstDayjs = dayjs(firstTime, timeFormat)
+        secondDayjs = dayjs(secondTime, timeFormat)
     }
-    
-    // 处理跨天的情况
-    if (secondDayjs.isBefore(firstDayjs)) {
-      secondDayjs = secondDayjs.add(1, 'day')
+
+    // 验证解析是否成功
+    if (!firstDayjs.isValid() || !secondDayjs.isValid()) {
+        console.error('时间解析失败:', { firstTime, secondTime, timeFormat })
+        return undefined
     }
-  } else {
-    // 包含日期的格式直接解析
-    firstDayjs = dayjs(firstTime, timeFormat)
-    secondDayjs = dayjs(secondTime, timeFormat)
-  }
-  
-  // 验证解析是否成功
-  if (!firstDayjs.isValid() || !secondDayjs.isValid()) {
-    console.error('时间解析失败:', { firstTime, secondTime, timeFormat })
-    return
-  }
-  
-  // 计算两个时间的差值（毫秒）
-  const diffInMilliseconds = secondDayjs.diff(firstDayjs)
-  
-  // 根据方向计算新时间
-  let newTime
-  if (direction === 'end') {
-    // 向后补点：在第二个时间上加上差值
-    newTime = secondDayjs.add(diffInMilliseconds, 'millisecond')
-  } else {
-    // 向前补点：在第一个时间上减去差值
-    newTime = firstDayjs.subtract(diffInMilliseconds, 'millisecond')
-  }
-  
-  // 返回与原格式一致的时间字符串
-  let resultTime = newTime.format(timeFormat)
-  
-  // 如果结果是第二天的 00:00 且原始格式支持 24:00，则转换回 24:00
-  if (isTimeOnly && resultTime === '00:00') {
-    const baseDate = dayjs('2024-01-01')
-    if (newTime.date() > baseDate.date()) {
-      resultTime = '24:00'
+
+    // 计算两个时间的差值（毫秒）
+    const diffInMilliseconds = secondDayjs.diff(firstDayjs)
+
+    // 根据方向计算新时间
+    let newTime: dayjs.Dayjs
+    if (direction === 'end') {
+        // 向后补点：在第二个时间上加上差值
+        newTime = secondDayjs.add(diffInMilliseconds, 'millisecond')
+    } else {
+        // 向前补点：在第一个时间上减去差值
+        newTime = firstDayjs.subtract(diffInMilliseconds, 'millisecond')
     }
-  }
-  
-  return resultTime
+
+    // 返回与原格式一致的时间字符串
+    let resultTime = newTime.format(timeFormat)
+
+    // 如果结果是第二天的 00:00 且原始格式支持 24:00，则转换回 24:00
+    if (isTimeOnly && resultTime === '00:00') {
+        const baseDate = dayjs('2024-01-01')
+        if (newTime.date() > baseDate.date()) {
+            resultTime = '24:00'
+        }
+    }
+
+    return resultTime
 }
 
 // 检测时间格式
 const detectTimeFormat = (timeStr: string | number): string => {
-  const str = String(timeStr).trim()
-  
-  // 常见时间格式匹配（按从具体到通用的顺序）
-  if (/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}$/.test(str)) {
-    return 'YYYY-MM-DD HH:mm:ss'
-  } else if (/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}$/.test(str)) {
-    return 'YYYY-MM-DD HH:mm'
-  } else if (/^\d{4}\/\d{2}\/\d{2} \d{1,2}:\d{2}:\d{2}$/.test(str)) {
-    return 'YYYY/MM/DD HH:mm:ss'
-  } else if (/^\d{4}\/\d{2}\/\d{2} \d{1,2}:\d{2}$/.test(str)) {
-    return 'YYYY/MM/DD HH:mm'
-  } else if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    return 'YYYY-MM-DD'
-  } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(str)) {
-    return 'YYYY/MM/DD'
-  } else if (/^\d{2}-\d{2} \d{1,2}:\d{2}$/.test(str)) {
-    return 'MM-DD HH:mm'
-  } else if (/^\d{1,2}:\d{2}:\d{2}$/.test(str)) {
-    // 支持单双数字小时（如 "0:00:00" 或 "00:00:00"）
-    return 'HH:mm:ss'
-  } else if (/^\d{1,2}:\d{2}$/.test(str)) {
-    // 支持单双数字小时（如 "0:00" 或 "00:00"）
+    const str = String(timeStr).trim()
+
+    // 常见时间格式匹配（按从具体到通用的顺序）
+    if (/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}$/.test(str)) {
+        return 'YYYY-MM-DD HH:mm:ss'
+    } else if (/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}$/.test(str)) {
+        return 'YYYY-MM-DD HH:mm'
+    } else if (/^\d{4}\/\d{2}\/\d{2} \d{1,2}:\d{2}:\d{2}$/.test(str)) {
+        return 'YYYY/MM/DD HH:mm:ss'
+    } else if (/^\d{4}\/\d{2}\/\d{2} \d{1,2}:\d{2}$/.test(str)) {
+        return 'YYYY/MM/DD HH:mm'
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return 'YYYY-MM-DD'
+    } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(str)) {
+        return 'YYYY/MM/DD'
+    } else if (/^\d{2}-\d{2} \d{1,2}:\d{2}$/.test(str)) {
+        return 'MM-DD HH:mm'
+    } else if (/^\d{1,2}:\d{2}:\d{2}$/.test(str)) {
+        // 支持单双数字小时（如 "0:00:00" 或 "00:00:00"）
+        return 'HH:mm:ss'
+    } else if (/^\d{1,2}:\d{2}$/.test(str)) {
+        // 支持单双数字小时（如 "0:00" 或 "00:00"）
+        return 'HH:mm'
+    }
+
+    // 默认返回 HH:mm 格式
     return 'HH:mm'
-  }
-  
-  // 默认返回 HH:mm 格式
-  return 'HH:mm'
 }
-const initStationRef = (item: ChartOptions) => {
-   try {
-    // 只在图表不存在或已销毁时才创建新实例
-    if (!myChart || myChart.isDisposed()) {
-      // 确保DOM元素存在
-      if (!eChartsBoxRef.value) {
-        console.warn('ECharts container element not found')
-        return
-      }
-      
-      // 创建新实例
-      myChart = eCharts.init(eChartsBoxRef.value as HTMLDivElement)
-      
-      // 添加 resize 事件监听
-      window.removeEventListener("resize", resizeHandler)
-      window.addEventListener("resize", resizeHandler)
+// 获取Y轴数据
+const getYAxisData = (data: Array<ChartSeriesData>, yAxisIndex: number): number[] =>
+    data.filter(d => d.yAxisIndex === yAxisIndex).flatMap(d => d.data.filter(v => v !== null) as number[])
+
+// 默认提示格式化器
+const defaultTooltipFormatter = (params: any[], item: ChartOptions, isDoubleY = false): string => {
+    let result: string
+    if (item.xName && item.xName !== '时间' && item.xName !== '日期') {
+        result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}${item.xName}</div>`
+    } else {
+        result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}</div>`
     }
-  } catch (error) {
-    console.error('Failed to initialize ECharts:', error)
-    return
-  }    // 工具函数
-    const getYAxisData = (data: Array<ChartSeriesData>, yAxisIndex: number) =>
-        data.filter(d => d.yAxisIndex == yAxisIndex).flatMap(d => d.data).filter(val => val !== null) as number[]
-    const getMax = (arr: Array<number>) =>
-        arr.length ? (Math.max(...arr) > 1 ? parseFloat((Math.max(...arr) * 1.1).toFixed(0)) : parseFloat((Math.max(...arr) * 1.1).toFixed(2))) : 100
-
-    const getMin = (arr: Array<number>) =>
-        arr.length ? (Math.min(...arr) > 0 ? 0 : parseFloat(Math.min(...arr).toFixed(0))) : 0
-
-    // 默认提示格式化器
-    const defaultTooltipFormatter = (params: any, item: ChartOptions, isDoubleY = false): string => {
-        let result
-        if (item.xName && item.xName !== '时间' && item.xName !== '日期') {
-            result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}${item.xName}</div>`
+    result += params.map((param: any) => {
+        let yUnit = ''
+        if (isDoubleY) {
+            const seriesItem = item.series?.find(d => d.name === param.seriesName)
+            if (seriesItem) {
+                yUnit = (seriesItem.yAxisIndex ?? 1) === 0 ? (item.yName?.includes('：') ? item.yName.split('：')[1] || '' : item.yName || '') : (item.yName1?.includes('：') ? item.yName1.split('：')[1] || '' : item.yName1 || '')
+            }
         } else {
-            result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}</div>`
+            yUnit = item.yName?.includes('：') ? (item.yName.split('：')[1] || '') : (item.yName || '');
         }
-        result += (params as any[]).map((param: any) => {
-            let yUnit = ''
-            if (isDoubleY) {
-                const seriesItem = item.series?.find(d => d.name === param.seriesName)
-                if (seriesItem) {
-                    yUnit = (seriesItem.yAxisIndex ?? 1) === 0 ? (item.yName?.includes('：') ? item.yName.split('：')[1] || '' : item.yName || '') : (item.yName1?.includes('：') ? item.yName1.split('：')[1] || '' : item.yName1 || '')
-                }
-            } else {
-                yUnit = item.yName?.includes('：') ? (item.yName.split('：')[1] || '') : (item.yName || '');
+        return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff"><div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>${param.seriesName}：${param.value != null ? param.value : '--'}${yUnit}</div>`
+    }).join('<br>')
+    return result
+}
+
+// 公共 option 生成
+const getCommonOption = (item: ChartOptions, extra = {}) => ({
+    tooltip: {
+        show: item.tooltipShow ?? true,
+        trigger: item.tooltipTrigger ?? 'axis',
+        backgroundColor: item.tooltipBackgroundColor ?? "rgba(0,0,0,.3)",
+        borderColor: item.tooltipBorderColor ?? "rgba(0,0,0,.3)",
+        textStyle: { color: item.tooltipColor ?? "rgba(255, 255, 255, 1)" },
+        formatter: item.tooltipFormatter || (params => defaultTooltipFormatter(params, item, !!item.doubleY)),
+        axisPointer: {
+            label: { backgroundColor: '#6a7985' }
+        }
+    },
+    legend: item.legend ? item.legend : {
+        show: item.legendshowValue ?? true,
+        left: item.legendLocation ?? 'center',
+        top: item.legendTop ?? 'top',
+        orient: item.legendOrient ?? 'horizontal',
+        itemWidth: item.legendItemWidth ?? 30,
+        itemHeight: item.legendItemHeight ?? 14,
+        textStyle: {
+            color: item.legendColor ?? '#000',
+            fontSize: item.legendFontSize ?? 12,
+            fontWeight: item.legendFontWeight ?? 400,
+            rich: item.legendRich ?? {
+                one: { width: 60, height: 16, fontSize: 12, fontWeight: 400 },
             }
-            return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff"><div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>${param.seriesName}：${param.value != null ? param.value : '--'}${yUnit}</div>`
-        }).join('<br>')
-        return result
-    }
-    // 公共 option 生成
-    const getCommonOption = (item: ChartOptions, extra = {}) => ({
-        tooltip: {
-            show: item.tooltipShow ?? true,
-            trigger: item.tooltipTrigger ?? 'axis',
-            backgroundColor: item.tooltipBackgroundColor ?? "rgba(0,0,0,.3)",
-            borderColor: item.tooltipBorderColor ?? "rgba(0,0,0,.3)",
-            textStyle: { color: item.tooltipColor ?? "rgba(255, 255, 255, 1)" },
-            formatter: item.tooltipFormatter || (params => defaultTooltipFormatter(params, item, !!item.doubleY)),
-            axisPointer: {
-                label: { backgroundColor: '#6a7985' }
-            }
         },
-        legend:item.legend ? item.legend : {
-            show: item.legendshowValue ?? true,
-            left: item.legendLocation ?? 'center',
-            top: item.legendTop ?? 'top',
-            orient: item.legendOrient ?? 'horizontal',
-            itemWidth: item.legendItemWidth ?? 30,
-            itemHeight: item.legendItemHeight ?? 14,
-            textStyle: {
-                // color: '#000',
-                color:item.legendColor ?? '#000',
-                fontSize: item.legendFontSize ?? 12,
-                fontWeight: item.legendFontWeight ?? 400,
-                rich: item.legendRich ?? {
-                    one: { width: 60, height: 16, fontSize: 12, fontWeight: 400 },
-                }
-            },
-            formatter: item.legendFormatter ?? (name => `{one|${name}}`),
+        formatter: item.legendFormatter ?? (name => `{one|${name}}`),
+    },
+    color: itemColorArr,
+    dataZoom: item.dataZoom ?? [
+        {
+            type: "slider",
+            show: item.dataZoomShow ?? false,
+            realtime: true,
+            start: item.dataZoomStart ?? 0,
+            end: item.dataZoomEnd ?? 100,
+            bottom: item.dataZoomBottom ?? 15,
+            height: item.dataZoomHeight ?? 25,
         },
-        color: itemColorArr,
-        dataZoom: item.dataZoom ?? [
-            {
-                type: "slider",
-                show: item.dataZoomShow ?? false,
-                realtime: true,
-                start: item.dataZoomStart ?? 0,
-                end: item.dataZoomEnd ?? 100,
-                bottom: item.dataZoomBottom ?? 15,
-                height: item.dataZoomHeight ?? 25,
-            },
-            {
-                type: "inside",
-                realtime: true,
-                start: item.dataZoomStart ?? 0,
-                end: item.dataZoomEnd ?? 100,
-            },
-        ],
-        visualMap: item.visualMap ? item.visualMap : [],
-        grid: item.grid ?? {
-            left: '3%',
-            right: '5%',
-            bottom: '12%',
-            containLabel: true
+        {
+            type: "inside",
+            realtime: true,
+            start: item.dataZoomStart ?? 0,
+            end: item.dataZoomEnd ?? 100,
         },
-        xAxis: item.xAxis ?? [
-            {
-                show: item.showXAxis ?? true,
-                name: item.xName ?? '时间',
-                type: item.xType ?? 'category',
-                boundaryGap: item.boundaryGap ?? false,
-                data: item.timeList,
+    ],
+    visualMap: item.visualMap ? item.visualMap : [],
+    grid: item.grid ?? {
+        left: '3%',
+        right: '5%',
+        bottom: '12%',
+        containLabel: true
+    },
+    xAxis: item.xAxis ?? [
+        {
+            show: item.showXAxis ?? true,
+            name: item.xName ?? '时间',
+            type: item.xType ?? 'category',
+            boundaryGap: item.boundaryGap ?? false,
+            data: item.timeList,
             // 确保 x 轴轴线和刻度线可见
             axisLine: {
-              show: true,
-              lineStyle: { color: item.xColor ?? '#fff' }
+                show: true,
+                lineStyle: { color: item.xColor ?? '#fff' }
             },
             axisTick: {
-              show: true,
-              lineStyle: { color: item.xColor ?? '#fff' }
+                show: true,
+                lineStyle: { color: item.xColor ?? '#fff' }
             },
-                axisLabel: item.xAxisLabel ?? {
-                    color: item.xColor ?? "#fff",
-                    fontSize: item.xFontSize ?? "12px",
-                    fontWeight: item.xFontWeight ?? "normal",
-                    showMinLabel: item.compensateType === 'start' ? true : null,  // 如果补点了强制显示第一个标签（向前补点），否则自动判断
-                    showMaxLabel: item.compensateType === 'end' ? true : null,  // 强制显示最后一个标签（向后补点），否则自动判断
-                },
-                nameTextStyle: {
-                    color: item.xUnitColor ?? '#fff',
-                    verticalAlign: 'top',
-                    padding: [8, 0, 0, 0]
-                },
-                nameGap: item.xNameGap ?? 20,
-                nameLocation: item.xNameLocation ?? 'end'
+            axisLabel: item.xAxisLabel ?? {
+                color: item.xColor ?? "#fff",
+                fontSize: item.xFontSize ?? "12px",
+                fontWeight: item.xFontWeight ?? "normal",
+                showMinLabel: item.compensateType === 'start' ? true : null,
+                showMaxLabel: item.compensateType === 'end' ? true : null,
+            },
+            nameTextStyle: {
+                color: item.xUnitColor ?? '#fff',
+                verticalAlign: 'top',
+                padding: [8, 0, 0, 0]
+            },
+            nameGap: item.xNameGap ?? 20,
+            nameLocation: item.xNameLocation ?? 'end'
+        }
+    ],
+    ...extra
+})
+
+// 创建图表实例
+const createChartInstance = (): boolean => {
+    try {
+        // 只在图表不存在或已销毁时才创建新实例
+        if (!myChart || myChart.isDisposed()) {
+            // 确保DOM元素存在
+            if (!eChartsBoxRef.value) {
+                console.warn('ECharts container element not found')
+                return false
             }
-        ],
-        ...extra
-    })
 
-    if (item?.doubleY) {//双Y轴
-        const yAxisIndexZeroArr = getYAxisData(item.series!, 0)
-        const yAxisIndexOneArr = getYAxisData(item.series!, 1)
-        myChart.setOption(getCommonOption(item, {
-            yAxis: [
-                {
-                    show: item.showYAxis ?? true,
-                    name: item.yName ?? 'MW',
-                    type: item.yType ?? "value",
-                    nameGap: item.yNameGap ?? 20,
-                    nameRotate: 0,
-                  // 确保 Y 轴轴线（竖线）和刻度可见
-                  axisLine: {
-                    show: true,
-                    lineStyle: { color: item.yColor ?? '#fff' }
-                  },
-                  axisTick: {
-                    show: true,
-                    lineStyle: { color: item.yColor ?? '#fff' }
-                  },
-                    // max: getMax(yAxisIndexZeroArr),
-                    // min: getMin(yAxisIndexZeroArr),
-                    max: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMax(value) : null,
-                    min: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMin(value, yAxisIndexOneArr) : null,
-                    alignTicks: item.alignTicks ?? false,
-                    splitLine: {
-                        lineStyle: {
-                            type: 'dashed',
-                            width: 1,
-                            color: 'rgba(223, 223, 223, 0.1)',
-                            opacity: 1,
-                        }
-                    },
-                    axisLabel: item.yAxisLabel ?? {
-                        color: item.yColor ?? "#fff",
-                        fontSize: item.yFontSize ?? "12px",
-                        fontWeight: item.yFontWeight ?? "normal",
-                        formatter: item.yFormatter,
-                        // formatter: item.yFormatter || (value => value.toFixed(item.yAccuracy ?? 0)),
-                    },
-                    nameTextStyle: { color: '#fff' }
-                },
-                {
-                    show: item.showYAxis1 ?? true,
-                    name: item.yName1 ?? '元',
-                    type: item.yType1 ?? "value",
-                    nameGap: item.yNameGapOne ?? 20,
-                    nameRotate: 0,
-                  // 确保 Y 轴轴线（竖线）和刻度可见
-                  axisLine: {
-                    show: true,
-                    lineStyle: { color: item.yColor1 ?? '#fff' }
-                  },
-                  axisTick: {
-                    show: true,
-                    lineStyle: { color: item.yColor1 ?? '#fff' }
-                  },
-                    // max: getMax(yAxisIndexOneArr),
-                    // min: getMin(yAxisIndexOneArr),
-                    max: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMax(value) : null,
-                    min: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMin(value, yAxisIndexZeroArr) : null,
-                    alignTicks: item.alignTicks ?? false,
-                    splitLine: {
-                        lineStyle: {
-                            type: 'dashed',
-                            width: 1,
-                            color: 'rgba(223, 223, 223, 0.1)',
-                            opacity: 1,
-                        }
-                    },
-                    axisLabel: item.yAxisLabel1 ?? {
-                        color: item.yColor1 ?? "#fff",
-                        fontSize: item.yFontSize1 ?? "12px",
-                        fontWeight: item.yFontWeight1 ?? "normal",
-                        formatter: item.yFormatter1,
-                        // formatter: item.yFormatter1 || (value => value.toFixed(item.yAccuracy1 ?? 0)),
+            // 创建新实例
+            myChart = eCharts.init(eChartsBoxRef.value as HTMLDivElement)
 
-                    },
-                    nameTextStyle: { color: '#fff' }
-                },
-            ],
-            series: item.series
-        }), true)
-    } else {// 单轴
-        myChart.setOption(getCommonOption(item, {
-            yAxis: item.yAxis ?? [
-                {
-                    show: item.showYAxis ?? true,
-                    name: item.yName ?? 'MW',
-                    type: item.yType ?? "value",
-                    nameGap: item.yNameGap ?? 20,
-                    nameRotate: 0,
-            // 确保 Y 轴轴线（竖线）和刻度可见
-            axisLine: {
-              show: true,
-              lineStyle: { color: item.yColor ?? '#fff' }
-            },
-            axisTick: {
-              show: true,
-              lineStyle: { color: item.yColor ?? '#fff' }
-            },
-                    splitLine: {
-                        lineStyle: {
-                            type: 'dashed',
-                            width: 1,
-                            color: 'rgba(223, 223, 223, 0.1)',
-                            opacity: 1,
-                        }
-                    },
-                    axisLabel: item.yAxisLabel ?? {
-                        color: item.yColor ?? "#fff",
-                        fontSize: item.yFontSize ?? "12px",
-                        fontWeight: item.yFontWeight ?? "normal",
-                        formatter: item.yFormatter ,
-                    },
-                    nameTextStyle: { color: item.yUnitColor ?? '#fff' }
-                },
-            ],
-            series: item.series
-        }), true)
+            // 添加 resize 事件监听
+            window.removeEventListener("resize", resizeHandler)
+            window.addEventListener("resize", resizeHandler)
+        }
+        return true
+    } catch (error) {
+        console.error('Failed to initialize ECharts:', error)
+        return false
     }
- // 只在首次初始化时绑定事件，避免重复绑定
-  if (!myChart.getOption()?.series || (myChart.getOption()?.series as any[]).length === 0) {
-    myChart.on('legendselectchanged', (params) => {
-      if (item?.doubleY) {
-        updateChartAndCalculateMax(item, params as LegendSelectChangedEvent, myChart!);
-      }
-    });
-  }
-  
-  // 初始化后立即调用一次 resize 确保尺寸正确
-  setTimeout(() => {
-    resizeHandler()
-  }, 100)
 }
+
+// 设置双Y轴图表配置
+const setDoubleYAxisOption = (item: ChartOptions): void => {
+    const yAxisIndexZeroArr = getYAxisData(item.series!, 0)
+    const yAxisIndexOneArr = getYAxisData(item.series!, 1)
+
+    myChart!.setOption(getCommonOption(item, {
+        yAxis: [
+            {
+                show: item.showYAxis ?? true,
+                name: item.yName ?? 'MW',
+                type: item.yType ?? "value",
+                nameGap: item.yNameGap ?? 20,
+                nameRotate: 0,
+                axisLine: {
+                    show: true,
+                    lineStyle: { color: item.yColor ?? '#fff' }
+                },
+                axisTick: {
+                    show: true,
+                    lineStyle: { color: item.yColor ?? '#fff' }
+                },
+                max: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMax(value) : null,
+                min: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMin(value, yAxisIndexOneArr) : null,
+                alignTicks: item.alignTicks ?? false,
+                splitLine: {
+                    lineStyle: {
+                        type: 'dashed',
+                        width: 1,
+                        color: 'rgba(223, 223, 223, 0.1)',
+                        opacity: 1,
+                    }
+                },
+                axisLabel: item.yAxisLabel ?? {
+                    color: item.yColor ?? "#fff",
+                    fontSize: item.yFontSize ?? "12px",
+                    fontWeight: item.yFontWeight ?? "normal",
+                    formatter: item.yFormatter,
+                },
+                nameTextStyle: { color: '#fff' }
+            },
+            {
+                show: item.showYAxis1 ?? true,
+                name: item.yName1 ?? '元',
+                type: item.yType1 ?? "value",
+                nameGap: item.yNameGapOne ?? 20,
+                nameRotate: 0,
+                axisLine: {
+                    show: true,
+                    lineStyle: { color: item.yColor1 ?? '#fff' }
+                },
+                axisTick: {
+                    show: true,
+                    lineStyle: { color: item.yColor1 ?? '#fff' }
+                },
+                max: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMax(value) : null,
+                min: item.xAlignValue ? (value: { min: number; max: number }) => calcYAxisMin(value, yAxisIndexZeroArr) : null,
+                alignTicks: item.alignTicks ?? false,
+                splitLine: {
+                    lineStyle: {
+                        type: 'dashed',
+                        width: 1,
+                        color: 'rgba(223, 223, 223, 0.1)',
+                        opacity: 1,
+                    }
+                },
+                axisLabel: item.yAxisLabel1 ?? {
+                    color: item.yColor1 ?? "#fff",
+                    fontSize: item.yFontSize1 ?? "12px",
+                    fontWeight: item.yFontWeight1 ?? "normal",
+                    formatter: item.yFormatter1,
+                },
+                nameTextStyle: { color: '#fff' }
+            },
+        ],
+        series: item.series
+    }), true)
+}
+
+// 设置单Y轴图表配置
+const setSingleYAxisOption = (item: ChartOptions): void => {
+    myChart!.setOption(getCommonOption(item, {
+        yAxis: item.yAxis ?? [
+            {
+                show: item.showYAxis ?? true,
+                name: item.yName ?? 'MW',
+                type: item.yType ?? "value",
+                nameGap: item.yNameGap ?? 20,
+                nameRotate: 0,
+                axisLine: {
+                    show: true,
+                    lineStyle: { color: item.yColor ?? '#fff' }
+                },
+                axisTick: {
+                    show: true,
+                    lineStyle: { color: item.yColor ?? '#fff' }
+                },
+                splitLine: {
+                    lineStyle: {
+                        type: 'dashed',
+                        width: 1,
+                        color: 'rgba(223, 223, 223, 0.1)',
+                        opacity: 1,
+                    }
+                },
+                axisLabel: item.yAxisLabel ?? {
+                    color: item.yColor ?? "#fff",
+                    fontSize: item.yFontSize ?? "12px",
+                    fontWeight: item.yFontWeight ?? "normal",
+                    formatter: item.yFormatter,
+                },
+                nameTextStyle: { color: item.yUnitColor ?? '#fff' }
+            },
+        ],
+        series: item.series
+    }), true)
+}
+
+// 绑定图例选择事件
+const bindLegendEvent = (item: ChartOptions): void => {
+    if (!myChart) return
+
+    // 移除旧的监听器
+    myChart.off('legendselectchanged')
+
+    // 绑定新的事件监听器
+    myChart.on('legendselectchanged', (params) => {
+        if (item?.doubleY) {
+            updateChartAndCalculateMax(item, params as LegendSelectChangedEvent, myChart!);
+        }
+    });
+}
+
+const initStationRef = (item: ChartOptions) => {
+    // 创建图表实例
+    if (!createChartInstance()) {
+        return
+    }
+
+    // 设置图表配置
+    if (item?.doubleY) {
+        setDoubleYAxisOption(item)
+    } else {
+        setSingleYAxisOption(item)
+    }
+
+    // 绑定图例选择事件
+    bindLegendEvent(item)
+
+    // 初始化后立即调用一次 resize 确保尺寸正确
+    setTimeout(() => {
+        resizeHandler()
+    }, 100)
+}
+
+// 图例选择变化处理
 const updateChartAndCalculateMax = (item: ChartOptions, name: LegendSelectChangedEvent, myChart: eCharts.ECharts) => {
     let filteredData = item.series;
     if (name) {
@@ -693,21 +686,12 @@ const updateChartAndCalculateMax = (item: ChartOptions, name: LegendSelectChange
     });
     calculateMax({ ...item, series: filteredData }, myChart);
 };
-//计算y轴上下限
+
+// 计算y轴上下限
 const calculateMax = (item: ChartOptions, myChart: eCharts.ECharts) => {
     let yAxisIndexZeroArr: Array<number | null> = []
     let yAxisIndexOneArr: Array<number | null> = []
 
-    // // 计算所有数据的最大值和最小值
-    // item.series?.map(seriesData => {
-    //   if (seriesData.yAxisIndex == 0) {
-    //     yAxisIndexZeroArr.push(...seriesData.data);
-    //   } else if (seriesData.yAxisIndex == 1) {
-    //     yAxisIndexOneArr.push(...seriesData.data);
-    //   }
-    // });
-    // const yAxisIndexZeroArr = item.series?.filter(d => d.yAxisIndex === 0).flatMap(d => d.data) || [];
-    // const yAxisIndexOneArr = item.series?.filter(d => d.yAxisIndex === 1).flatMap(d => d.data) || [];
     item.series?.forEach(seriesData => {
         if (seriesData.yAxisIndex === 0) {
             yAxisIndexZeroArr = yAxisIndexZeroArr.concat(seriesData.data);
@@ -715,7 +699,6 @@ const calculateMax = (item: ChartOptions, myChart: eCharts.ECharts) => {
             yAxisIndexOneArr = yAxisIndexOneArr.concat(seriesData.data);
         }
     });
-
 
     // 更新图表配置
     myChart.setOption({
@@ -731,8 +714,9 @@ const calculateMax = (item: ChartOptions, myChart: eCharts.ECharts) => {
         ],
     });
 };
+
 // 生成表格数据
-const calculateTableData = (item: ChartOptions, tableHeader: any, tableData: any) => {
+const calculateTableData = (item: ChartOptions, tableHeader: Ref<TableColumn[]>, tableData: Ref<Array<Record<string, any>>>) => {
     // 初始化表头
     tableHeader.value = [{
         title: item.title || '时间',
@@ -763,85 +747,79 @@ const calculateTableData = (item: ChartOptions, tableHeader: any, tableData: any
         tableData.value.shift()
     }
 }
+
 // 添加组件内部的 ResizeObserver
 let containerResizeObserver: ResizeObserver | null = null
-defineExpose({ resizeHandler })//暴露方法,在父组件中调用
+
+defineExpose({ resizeHandler })
 
 onMounted(() => {
-  // 使用计算属性 processedOpt，自动处理补点逻辑
-  initStationRef(processedOpt.value)
-  
-  if ((props.opt as any).showTable !== undefined) {
-    showTable.value = (props.opt as any).showTable
-    if (showTable.value) {
-      calculateTableData(processedOpt.value, eChartsTableHeader, eChartsTableData)
+    initStationRef(processedOpt.value)
+
+    if ((props.opt as any).showTable !== undefined) {
+        showTable.value = (props.opt as any).showTable
+        if (showTable.value) {
+            calculateTableData(processedOpt.value, eChartsTableHeader, eChartsTableData)
+        }
     }
-  }
-  
-  // 监听图表容器本身的尺寸变化
-  nextTick(() => {
-    if (eChartsBoxRef.value) {
-      containerResizeObserver = new ResizeObserver((entries) => {
-        // 使用 requestAnimationFrame 确保在浏览器重绘前执行
-        requestAnimationFrame(() => {
-          const entry = entries[0]
-          if (myChart && !myChart.isDisposed()) {
-            myChart.resize()
-          }
-        })
-      })
-      containerResizeObserver.observe(eChartsBoxRef.value)
-    }
-  })
+
+    nextTick(() => {
+        if (eChartsBoxRef.value) {
+            containerResizeObserver = new ResizeObserver(() => {
+                requestAnimationFrame(() => {
+                    if (myChart && !myChart.isDisposed()) {
+                        myChart.resize()
+                    }
+                })
+            })
+            containerResizeObserver.observe(eChartsBoxRef.value)
+        }
+    })
 })
 
 onUnmounted(() => {
-  window.removeEventListener("resize", resizeHandler)
-  if (containerResizeObserver) {
-    containerResizeObserver.disconnect()
-    containerResizeObserver = null
-  }
-  disposeChart()
-})
-//防抖函数
-const debounce = (func: Function, delay: number) => {
-  let timer: number | null = null
-  return function (this: any, ...args: any[]) {
-    if (timer) {
-      clearTimeout(timer)
+    window.removeEventListener("resize", resizeHandler)
+    if (containerResizeObserver) {
+        containerResizeObserver.disconnect()
+        containerResizeObserver = null
     }
-    timer = window.setTimeout(() => {
-      func.apply(this, args)
-    }, delay)
-  }
+    disposeChart()
+})
+
+// 防抖函数
+const debounce = (func: Function, delay: number) => {
+    let timer: number | null = null
+    return function (this: any, ...args: any[]) {
+        if (timer) {
+            clearTimeout(timer)
+        }
+        timer = window.setTimeout(() => {
+            func.apply(this, args)
+        }, delay)
+    }
 }
+
 // 防抖的图表更新函数（不销毁重建，只更新配置）
 const debouncedInitChart = debounce((newVal: ChartOptions) => {
-  if (newVal && Object.keys(newVal).length > 0) {
-    showValue.value = true
-    calculateTableData(newVal, eChartsTableHeader, eChartsTableData)
-    initStationRef(newVal)
-    
-    // 图表更新后，确保 resize
-    nextTick(() => {
-      setTimeout(() => {
-        if (myChart && !myChart.isDisposed()) {
-          myChart.resize()
-        }
-      }, 50)
-    })
-  }
-}, 50) // 50ms 防抖延迟，减少延迟提升响应速度
+    if (newVal && Object.keys(newVal).length > 0) {
+        showValue.value = true
+        calculateTableData(newVal, eChartsTableHeader, eChartsTableData)
+        initStationRef(newVal)
 
-watch(() => opt.value, (newVal) => {
-  // 使用防抖函数避免频繁重新初始化
-  showValue.value = true
-  debouncedInitChart(newVal)
-}, { deep: true, immediate: false }) // 添加深度监听，避免立即执行
-// 监听计算属性 processedOpt 而不是 opt.value，自动处理补点逻辑
+        nextTick(() => {
+            setTimeout(() => {
+                if (myChart && !myChart.isDisposed()) {
+                    myChart.resize()
+                }
+            }, 50)
+        })
+    }
+}, 50)
+
 watch(() => processedOpt.value, (newVal) => {
-  // 使用防抖函数避免频繁重新初始化
-  showValue.value = true
-  debouncedInitChart(newVal)
-}, { deep: true, immediate: false }) // 添加深度监听，避免立即执行
+    if (newVal && Object.keys(newVal).length > 0) {
+        showValue.value = true
+        debouncedInitChart(newVal)
+    }
+}, { deep: true, immediate: false })
 </script>
