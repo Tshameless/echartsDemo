@@ -17,7 +17,9 @@
     <div class="lineEChartsBox">
       <lineECharts  ref="chartRef" v-if="Object.keys(eChartsData4).length > 0" :opt="eChartsData4" :height="350"></lineECharts>
     </div>
-
+  <div class="lineEChartsBox">
+      <lineECharts  v-if="Object.keys(eChartsData5).length > 0" :opt="eChartsData5" :height="350"></lineECharts>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -28,6 +30,7 @@ const eChartsData = ref({})
 const eChartsData2 = ref({})
 const eChartsData3 = ref({})
 const eChartsData4 = ref({})
+const eChartsData5 = ref({})
 const eleEchartsData = ref({})
 let resizeObserver = null
 const chartRef=ref()
@@ -118,7 +121,10 @@ onMounted(() => {
     const currentIndex = ref(12)
     eChartsData3.value = {
       title: '时间',
-      timeList: Array.from(Array(24).keys()).map(n => dayjs().add(n, 'hours').format('HH:mm')),
+      // timeList: Array.from(Array(24).keys()).map(n => dayjs().add(n, 'hours').format('HH:mm')),
+      timeList: Array.from({ length: 24 }, (_, index) => 
+  dayjs().startOf('day').add(index, 'hour').format('HH:mm')
+),
       showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
@@ -240,6 +246,60 @@ onMounted(() => {
               return n * (-2)
             } else {
               return n * 2
+            }
+          }),
+          yAxisIndex: 1
+        },
+      ]
+    }
+        eChartsData5.value = {
+      title: '时间',
+      timeList: ['运行', '离线', '故障', '报警', '无信息'],
+      showTable: true,
+      legendLocation: 'center',
+      boundaryGap: true,
+      dataZoomShow: true,
+      xName: '时间',
+      deleteLastPoint: true,
+      xAlignValue: 'center',
+      doubleY: true,
+      yName: '把',
+      yName1: '元/MWh',
+      tooltipFormatter: function (params: any) {
+        return params.map((param: any) => {
+          return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff">
+                    <div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>
+                    ${param.axisValueLabel}：${param.data != null ? param.data : '--'}${param.componentIndex == 0 ? '把' : '元/MWh'}
+                  </div>`;
+        }).join('<br>');
+      },
+      series: [
+        {
+          name: "负荷设备功率",
+          type: "line",
+          step: "end",
+          symbol: 'none',
+          tableUnit: '(MW)',
+          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
+            if (n % 2 == 0) {
+              return n * (-1)
+            } else {
+              return n * -2
+            }
+          }),
+          yAxisIndex: 0
+        },
+        {
+          name: "设备状态",
+          type: "line",
+          step: "end",
+          symbol: 'none',
+          tableUnit: '(MW)',
+          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
+            if (n % 2 == 0) {
+              return n * (-0.2)
+            } else {
+              return n * 0.1
             }
           }),
           yAxisIndex: 1
