@@ -19,6 +19,7 @@ declare module 'vue' {
     IconSupport: typeof import('./src/components/icons/IconSupport.vue')['default']
     IconTooling: typeof import('./src/components/icons/IconTooling.vue')['default']
     LineEcharts: typeof import('./src/components/lineEcharts.vue')['default']
+    'LineEcharts_version1.0': typeof import('./src/components/lineEcharts_version1.0.vue')['default']
     NButton: typeof import('naive-ui')['NButton']
     NDataTable: typeof import('naive-ui')['NDataTable']
     NInputNumber: typeof import('naive-ui')['NInputNumber']
