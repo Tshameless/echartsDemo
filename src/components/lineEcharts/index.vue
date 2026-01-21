@@ -20,14 +20,12 @@
 <script lang="ts" setup>
 import { toRefs, onMounted, ref, onUnmounted, watch, nextTick, computed, shallowRef } from 'vue'
 import * as eCharts from 'echarts'
-import { cloneDeep } from 'lodash-es'
+import { debounce } from 'lodash-es'
 import type { ChartOptions, LegendSelectChangedEvent } from './types'
-import { calcYAxisMax, calcYAxisMin, judgeCompensateTimeType, getYAxisData } from './utils'
+import { calcYAxisMax, calcYAxisMin, getYAxisData, calculateCompensateValue } from './utils'
 import { useChartResize } from './useChartResize'
 import { useChartTable } from './useChartTable'
-
-// 定义颜色常量
-const itemColorArr = ['red', '#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
+import { useChartOption } from './useChartOption'
 
 // 定义 props 类型
 interface LineChartProps {
@@ -49,35 +47,8 @@ const myChart = shallowRef<eCharts.ECharts | null>(null)
 // 使用 Hooks
 const { resize } = useChartResize(myChart, eChartsBoxRef)
 const { showTable, tableData, tableHeader, showValue, calculateTableData } = useChartTable()
+const { getCommonOption } = useChartOption()
 
-
-// 辅助函数：计算补点值
-const calculateCompensateValue = (type: 'start' | 'end', list: Array<string | number> | undefined) => {
-    if (!list || list.length < 2) return undefined
-
-    const idx1 = type === 'end' ? list.length - 2 : 0
-    const idx2 = type === 'end' ? list.length - 1 : 1
-
-    const val1 = list[idx1]
-    const val2 = list[idx2]
-
-    // 判断是否为纯数字（排除日期格式字符串）
-    const isNumeric = (val: string | number) => {
-        if (typeof val === 'number') return true
-        return !isNaN(Number(val)) && !/[-/:]/.test(String(val))
-    }
-
-    if (isNumeric(val1) && isNumeric(val2)) {
-        const num1 = Number(val1)
-        const num2 = Number(val2)
-        const diff = num2 - num1
-        const result = type === 'end' ? num2 + diff : num1 - diff
-        // 保持原数据类型一致性
-        return typeof val1 === 'string' ? String(result) : result
-    }
-
-    return judgeCompensateTimeType(type, list)
-}
 
 // 使用计算属性处理补点逻辑，避免直接修改props和重复计算
 const processedOpt = computed(() => {
@@ -85,8 +56,17 @@ const processedOpt = computed(() => {
         return opt.value
     }
 
-    // 深拷贝避免修改原数据
-    const processed: ChartOptions = cloneDeep(opt.value)
+    // 浅拷贝 + 局部深拷贝，避免全量 cloneDeep 带来的性能开销
+    const processed: ChartOptions = { ...opt.value }
+    if (processed.timeList) {
+        processed.timeList = [...processed.timeList]
+    }
+    if (processed.series) {
+        processed.series = processed.series.map(item => ({
+            ...item,
+            data: [...item.data]
+        }))
+    }
 
     // 执行补点
     if (processed.compensateType === 'end') {
@@ -107,119 +87,6 @@ const processedOpt = computed(() => {
         }
     }
     return processed
-})
-
-// 默认提示格式化器
-const defaultTooltipFormatter = (params: any[], item: ChartOptions, isDoubleY = false): string => {
-    let result: string
-    if (item.xName && item.xName !== '时间' && item.xName !== '日期') {
-        result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}${item.xName}</div>`
-    } else {
-        result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}</div>`
-    }
-    result += params.map((param: any) => {
-        let yUnit = ''
-        if (isDoubleY) {
-            const seriesItem = item.series?.find(d => d.name === param.seriesName)
-            if (seriesItem) {
-                yUnit = (seriesItem.yAxisIndex ?? 1) === 0 ? (item.yName?.includes('：') ? item.yName.split('：')[1] || '' : item.yName || '') : (item.yName1?.includes('：') ? item.yName1.split('：')[1] || '' : item.yName1 || '')
-            }
-        } else {
-            yUnit = item.yName?.includes('：') ? (item.yName.split('：')[1] || '') : (item.yName || '');
-        }
-        return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff"><div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>${param.seriesName}：${param.value != null ? param.value : '--'}${yUnit}</div>`
-    }).join('<br>')
-    return result
-}
-
-// 公共 option 生成
-const getCommonOption = (item: ChartOptions, extra = {}) => ({
-    tooltip: {
-        show: item.tooltipShow ?? true,
-        trigger: item.tooltipTrigger ?? 'axis',
-        backgroundColor: item.tooltipBackgroundColor ?? "rgba(0,0,0,.3)",
-        borderColor: item.tooltipBorderColor ?? "rgba(0,0,0,.3)",
-        textStyle: { color: item.tooltipColor ?? "rgba(255, 255, 255, 1)" },
-        formatter: item.tooltipFormatter || (params => defaultTooltipFormatter(params, item, !!item.doubleY)),
-        axisPointer: {
-            label: { backgroundColor: '#6a7985' }
-        }
-    },
-    legend: item.legend ? item.legend : {
-        show: item.legendshowValue ?? true,
-        left: item.legendLocation ?? 'center',
-        top: item.legendTop ?? 'top',
-        orient: item.legendOrient ?? 'horizontal',
-        itemWidth: item.legendItemWidth ?? 30,
-        itemHeight: item.legendItemHeight ?? 14,
-        textStyle: {
-            color: item.legendColor ?? '#000',
-            fontSize: item.legendFontSize ?? 12,
-            fontWeight: item.legendFontWeight ?? 400,
-            rich: item.legendRich ?? {
-                one: { width: 60, height: 16, fontSize: 12, fontWeight: 400 },
-            }
-        },
-        formatter: item.legendFormatter ?? (name => `{one|${name}}`),
-    },
-    color: itemColorArr,
-    dataZoom: item.dataZoom ?? [
-        {
-            type: "slider",
-            show: item.dataZoomShow ?? false,
-            realtime: true,
-            start: item.dataZoomStart ?? 0,
-            end: item.dataZoomEnd ?? 100,
-            bottom: item.dataZoomBottom ?? 15,
-            height: item.dataZoomHeight ?? 25,
-        },
-        {
-            type: "inside",
-            realtime: true,
-            start: item.dataZoomStart ?? 0,
-            end: item.dataZoomEnd ?? 100,
-        },
-    ],
-    visualMap: item.visualMap ? item.visualMap : [],
-    grid: item.grid ?? {
-        left: '3%',
-        right: '5%',
-        bottom: '12%',
-        containLabel: true
-    },
-    xAxis: item.xAxis ?? [
-        {
-            show: item.showXAxis ?? true,
-            name: item.xName ?? '时间',
-            type: item.xType ?? 'category',
-            boundaryGap: item.boundaryGap ?? false,
-            data: item.timeList,
-            // 确保 x 轴轴线和刻度线可见
-            axisLine: {
-                show: true,
-                lineStyle: { color: item.xColor ?? '#fff' }
-            },
-            axisTick: {
-                show: true,
-                lineStyle: { color: item.xColor ?? '#fff' }
-            },
-            axisLabel: item.xAxisLabel ?? {
-                color: item.xColor ?? "#fff",
-                fontSize: item.xFontSize ?? "12px",
-                fontWeight: item.xFontWeight ?? "normal",
-                showMinLabel: item.compensateType === 'start' ? true : null,
-                showMaxLabel: item.compensateType === 'end' ? true : null,
-            },
-            nameTextStyle: {
-                color: item.xUnitColor ?? '#fff',
-                verticalAlign: 'top',
-                padding: [8, 0, 0, 0]
-            },
-            nameGap: item.xNameGap ?? 20,
-            nameLocation: item.xNameLocation ?? 'end'
-        }
-    ],
-    ...extra
 })
 
 // 创建图表实例
@@ -443,8 +310,8 @@ defineExpose({ resizeHandler: resize })
 onMounted(() => {
     initStationRef(processedOpt.value)
 
-    if ((props.opt as any).showTable !== undefined) {
-        showTable.value = (props.opt as any).showTable
+    if (props.opt.showTable !== undefined) {
+        showTable.value = props.opt.showTable
         if (showTable.value) {
             calculateTableData(processedOpt.value)
         }
@@ -458,19 +325,6 @@ onUnmounted(() => {
         myChart.value = null
     }
 })
-
-// 防抖函数
-const debounce = (func: Function, delay: number) => {
-    let timer: number | null = null
-    return function (this: any, ...args: any[]) {
-        if (timer) {
-            clearTimeout(timer)
-        }
-        timer = window.setTimeout(() => {
-            func.apply(this, args)
-        }, delay)
-    }
-}
 
 // 防抖的图表更新函数（不销毁重建，只更新配置）
 const debouncedInitChart = debounce((newVal: ChartOptions) => {

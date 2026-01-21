@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import type { ChartSeriesData } from './types'
+import type { ChartSeriesData, ChartOptions } from './types'
 
 // y轴上下限计算函数
 export const calcYAxisMax = (value: { max: number, min: number }) => {
@@ -139,6 +139,57 @@ export const judgeCompensateTimeType = (direction: 'start' | 'end' = 'end', time
     }
 
     return resultTime
+}
+
+// 辅助函数：计算补点值
+export const calculateCompensateValue = (type: 'start' | 'end', list: Array<string | number> | undefined) => {
+    if (!list || list.length < 2) return undefined
+
+    const idx1 = type === 'end' ? list.length - 2 : 0
+    const idx2 = type === 'end' ? list.length - 1 : 1
+
+    const val1 = list[idx1]
+    const val2 = list[idx2]
+
+    // 判断是否为纯数字（排除日期格式字符串）
+    const isNumeric = (val: string | number) => {
+        if (typeof val === 'number') return true
+        return !isNaN(Number(val)) && !/[-/:]/.test(String(val))
+    }
+
+    if (isNumeric(val1) && isNumeric(val2)) {
+        const num1 = Number(val1)
+        const num2 = Number(val2)
+        const diff = num2 - num1
+        const result = type === 'end' ? num2 + diff : num1 - diff
+        // 保持原数据类型一致性
+        return typeof val1 === 'string' ? String(result) : result
+    }
+
+    return judgeCompensateTimeType(type, list)
+}
+
+// 默认提示格式化器
+export const defaultTooltipFormatter = (params: any[], item: ChartOptions, isDoubleY = false): string => {
+    let result: string
+    if (item.xName && item.xName !== '时间' && item.xName !== '日期') {
+        result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}${item.xName}</div>`
+    } else {
+        result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}</div>`
+    }
+    result += params.map((param: any) => {
+        let yUnit = ''
+        if (isDoubleY) {
+            const seriesItem = item.series?.find(d => d.name === param.seriesName)
+            if (seriesItem) {
+                yUnit = (seriesItem.yAxisIndex ?? 1) === 0 ? (item.yName?.includes('：') ? item.yName.split('：')[1] || '' : item.yName || '') : (item.yName1?.includes('：') ? item.yName1.split('：')[1] || '' : item.yName1 || '')
+            }
+        } else {
+            yUnit = item.yName?.includes('：') ? (item.yName.split('：')[1] || '') : (item.yName || '');
+        }
+        return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff"><div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>${param.seriesName}：${param.value != null ? param.value : '--'}${yUnit}</div>`
+    }).join('<br>')
+    return result
 }
 
 // 获取Y轴数据
