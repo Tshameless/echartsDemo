@@ -80,7 +80,7 @@ interface ChartOptions {
     tooltipBorderColor?: string //默认提示边框色
     tooltipColor?: string //默认提示文字色
     tooltipFormatter?: (params: any) => string //默认提示格式化器,对于有特殊需求时，可自定义，如果需要修改组件的统一提示，请修改defaultTooltipFormatter函数
-    legendshowValue?: boolean //默认显示图例
+    legendShow?: boolean //默认显示图例
     legend?: object //图例配置
     legendColor?: string //默认图例颜色
     legendFontSize?: number //默认图例字体大小
@@ -470,7 +470,7 @@ const initStationRef = (item: ChartOptions) => {
             }
         },
         legend:item.legend ? item.legend : {
-            show: item.legendshowValue ?? true,
+            show: item.legendShow ?? true,
             left: item.legendLocation ?? 'center',
             top: item.legendTop ?? 'top',
             orient: item.legendOrient ?? 'horizontal',

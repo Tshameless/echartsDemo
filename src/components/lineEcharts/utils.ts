@@ -1,6 +1,17 @@
 import dayjs from 'dayjs'
 import type { ChartSeriesData, ChartOptions } from './types'
 
+/** 转义 HTML 防止 XSS（Tooltip 等来自数据的内容，统一转义后再用于 v-html） */
+export function escapeHtml(s: string | number): string {
+    const str = String(s)
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+}
+
 // y轴上下限计算函数
 export const calcYAxisMax = (value: { max: number, min: number }) => {
     const maxAbs = Math.max(Math.abs(value.max), Math.abs(value.min));

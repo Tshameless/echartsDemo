@@ -1,8 +1,10 @@
 import * as eCharts from 'echarts'
 import type { ChartOptions, LegendSelectChangedEvent } from '@/components/lineEcharts/types'
-import { calcYAxisMax, calcYAxisMin } from '@/components/lineEcharts/utils'
+import { calcYAxisMax, calcYAxisMin, escapeHtml } from '@/components/lineEcharts/utils'
 
-const itemColorArr = ['#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
+/** 默认图表色板，供联动图与单图共用 */
+export const DEFAULT_CHART_COLORS = ['#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
+const itemColorArr = DEFAULT_CHART_COLORS
 
 export const useLinkedChartOption = () => {
   const customTooltipFormatter = (params: any[], item: ChartOptions, isDoubleY = false): string => {
@@ -10,12 +12,12 @@ export const useLinkedChartOption = () => {
     const axisValue = params[0].axisValue
     const textColor = '#333'
     let result = `<div style="padding: 12px 16px; min-width: 200px;">`
-    result += `<div style="margin-bottom: 10px; font-size: 14px; color: ${textColor}; font-weight: 500;">${axisValue}</div>`
+    result += `<div style="margin-bottom: 10px; font-size: 14px; color: ${textColor}; font-weight: 500;">${escapeHtml(String(axisValue))}</div>`
     params.forEach((param: any) => {
       const rawValue = param.value
       const value = rawValue != null ? rawValue : '--'
       const color = param.color
-      const marker = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background-color:${color};vertical-align:middle;flex-shrink:0;"></span>`
+      const marker = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background-color:${escapeHtml(String(color ?? ''))};vertical-align:middle;flex-shrink:0;"></span>`
       let yUnit = ''
       const seriesItem = item.series?.find((d: any) => d.name === param.seriesName)
       if (seriesItem?.tableUnit) {
@@ -31,8 +33,8 @@ export const useLinkedChartOption = () => {
       const displayValue = value === '--' ? value : `${value}${yUnit}`
       result += `<div style="margin: 6px 0; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
         ${marker}
-        <span style="color: ${textColor}; font-size: 13px; flex: 1;">${param.seriesName}</span>
-        <span style="color: ${textColor}; font-size: 13px; margin-left: auto; white-space: nowrap;">${displayValue}</span>
+        <span style="color: ${textColor}; font-size: 13px; flex: 1;">${escapeHtml(String(param.seriesName ?? ''))}</span>
+        <span style="color: ${textColor}; font-size: 13px; margin-left: auto; white-space: nowrap;">${escapeHtml(String(displayValue))}</span>
       </div>`
     })
     result += `</div>`

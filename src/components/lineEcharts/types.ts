@@ -5,6 +5,7 @@ export interface ChartSeriesData {
     stack?: string  //堆叠
     yAxisIndex?: number  //Y轴索引，只有doubleY为true时生效，否则不传这个属性
     data: Array<number | null>  //数据
+    rawData?: (number | null)[]  //原始数据，用于表格/统一 Tooltip 等，不传则用 data
     tableUnit?: string  //表格列单位
 }
 
@@ -114,6 +115,7 @@ export interface ChartOptions {
     yAccuracy1?: number //默认Y轴1精度
     yNameGapOne?: number //默认Y轴1名称距离顶部
     series?: Array<ChartSeriesData> //默认数据
+    color?: string[] // 系列色板，不传则用默认色板
     title?: string //默认图表标题
     deleteLastPoint?: boolean //删除最后一个数据点
     deleteFirstPoint?: boolean //删除第一个数据点

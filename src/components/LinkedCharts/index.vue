@@ -19,11 +19,8 @@
     </div>
     <div v-show="displayChart" class="chart-content">
       <div ref="containerRef" class="linked-chart-container">
-        <template v-if="chartList.length === 0">
-          <!-- 无数据时不渲染 -->
-        </template>
-        <template v-else>
-          <div v-for="(_, index) in chartList" :key="index" class="chart-item-wrap">
+        <template v-if="chartList.length > 0">
+          <div v-for="(opt, index) in chartList" :key="getChartItemKey(opt, index)" class="chart-item-wrap">
             <div v-if="getChartTitle(index)" class="chart-title">{{ getChartTitle(index) }}</div>
             <div
               :ref="(el) => setBoxRef(el as HTMLDivElement | null, index)"
@@ -39,7 +36,7 @@
         :columns="dataTableColumns"
         :data="tableRows"
         :max-height="tableMaxHeight"
-        :scroll-x="1200"
+        :scroll-x="TABLE_SCROLL_X"
         striped
         :bordered="true"
       />
@@ -61,9 +58,19 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } fr
 import * as eCharts from 'echarts'
 import { debounce } from 'lodash-es'
 import { NDataTable } from 'naive-ui'
-import type { ChartOptions } from '@/components/lineEcharts/types'
+import type { ChartOptions, ChartSeriesData } from '@/components/lineEcharts/types'
 import { useChartTable } from '@/components/lineEcharts/useChartTable'
-import { useLinkedChartOption } from './useLinkedChartOption'
+import { escapeHtml } from '@/components/lineEcharts/utils'
+import { useLinkedChartOption, DEFAULT_CHART_COLORS } from './useLinkedChartOption'
+
+/** 防抖：resize */
+const DEBOUNCE_RESIZE_MS = 100
+/** 防抖：配置更新 */
+const DEBOUNCE_UPDATE_MS = 50
+/** 统一 Tooltip 相对鼠标的偏移（px） */
+const TOOLTIP_OFFSET_PX = 16
+/** 表格横向滚动宽度（px） */
+const TABLE_SCROLL_X = 1200
 
 interface Props {
   /** 单图配置（与 opts 二选一） */
@@ -103,6 +110,12 @@ function getChartTitle(index: number): string {
   return item?.title ?? ''
 }
 
+/** v-for 用稳定 key（无 id 时用 index + 标题/系列名） */
+function getChartItemKey(opt: ChartOptions, index: number): string {
+  const t = opt?.title ?? opt?.series?.[0]?.name
+  return t ? `${index}-${String(t)}` : String(index)
+}
+
 const emit = defineEmits(['chart-ready', 'update:showChartView'])
 
 /** 图/表切换用表格数据：单图从 opt 取，多图从 opts 合并 */
@@ -117,11 +130,12 @@ const chartTableSwitchTableData = computed(() => {
   
   const series: { name: string; unit?: string; data: (number | null)[] }[] = []
   list.forEach((opt) => {
-    opt?.series?.forEach((s: any) => {
+    opt?.series?.forEach((s: ChartSeriesData) => {
+      const raw = s.rawData
       series.push({
         name: s.name,
         unit: s.tableUnit,
-        data: s.rawData != null ? s.rawData : (s.data || [])
+        data: raw != null ? raw : (s.data || [])
       })
     })
   })
@@ -176,7 +190,12 @@ function setChartView(value: boolean) {
 const containerRef = ref<HTMLDivElement>()
 const boxRefs = ref<(HTMLDivElement | null)[]>([])
 function setBoxRef(el: HTMLDivElement | null, index: number) {
-  if (el) boxRefs.value[index] = el
+  const prev = boxRefs.value
+  if (prev[index] === el && prev.length > index) return
+  const arr = prev.slice()
+  while (arr.length <= index) arr.push(null)
+  arr[index] = el
+  boxRefs.value = arr
 }
 
 const myCharts = shallowRef<(eCharts.ECharts | null)[]>([])
@@ -188,30 +207,37 @@ const { updateChartOption, bindLegendSelectChanged } = useLinkedChartOption()
 // --- 统一 Tooltip 逻辑 ---
 const unifiedTooltipVisible = ref(false)
 const unifiedTooltipContent = ref('')
-const unifiedTooltipStyle = ref({ left: '0px', top: '0px' })
-const unifiedTooltipOffset = 16
-let axisPointerHandlers: { zr: any; onMove: any; onOut: any }[] = []
+const unifiedTooltipStyle = ref<Record<string, string>>({ left: '0px', top: '0px' })
+/** 统一 Tooltip 事件句柄（用于解绑） */
+interface AxisPointerHandler {
+  zr: ReturnType<eCharts.ECharts['getZr']> | undefined
+  onMove: (e: { offsetX: number; offsetY: number; event?: MouseEvent }) => void
+  onOut: () => void
+}
+let axisPointerHandlers: AxisPointerHandler[] = []
+/** 使用 connect(instances) 时返回的 groupId，用于 unmount 时只断开本组件 */
+const connectedGroupIdRef = ref<string | null>(null)
 
 /** 从图表实例获取图例选中状态 */
-function isSeriesSelected(chart: eCharts.ECharts, seriesName: string) {
+function isSeriesSelected(chart: eCharts.ECharts, seriesName: string): boolean {
   if (!chart || chart.isDisposed()) return true
   try {
-    const opt = chart.getOption() as any
+    const opt = chart.getOption() as { legend?: Array<{ selected?: Record<string, boolean> }> }
     const legend = opt?.legend
-    if (!legend || !legend.length) return true
+    if (!legend?.length) return true
     const selected = legend[0]?.selected
     if (selected == null) return true
     return selected[seriesName] !== false
-  } catch (_) {
+  } catch {
     return true
   }
 }
 
-/** 构建统一 Tooltip 内容 */
-function buildUnifiedTooltipContent(axisValue: string, dataIndex: number, hoveredChartIndex: number) {
+/** 构建统一 Tooltip 内容（内部已转义，可安全用于 v-html） */
+function buildUnifiedTooltipContent(axisValue: string, dataIndex: number, hoveredChartIndex: number): string {
   const textColor = '#333'
   let html = `<div style="padding: 12px 16px; min-width: 200px;">`
-  html += `<div style="margin-bottom: 10px; font-size: 14px; color: ${textColor}; font-weight: 500;">${axisValue}</div>`
+  html += `<div style="margin-bottom: 10px; font-size: 14px; color: ${textColor}; font-weight: 500;">${escapeHtml(axisValue)}</div>`
 
   // 排序：当前悬停的图表排在最前，其余按顺序
   const sortedChartIndices = [
@@ -226,17 +252,9 @@ function buildUnifiedTooltipContent(axisValue: string, dataIndex: number, hovere
     const opt = chartList.value[chartIndex]
     if (!chart || !opt || !opt.series) return
 
-    let hasRenderedSeries = false
-    
     opt.series.forEach((s) => {
       if (!isSeriesSelected(chart, s.name)) return
 
-      // 不同图表之间添加间距 (仅当上一个图表有渲染内容时)
-      if (lastRenderedChartIndex >= 0 && chartIndex !== lastRenderedChartIndex && !hasRenderedSeries) {
-         // 这里逻辑稍微复杂一点：我们希望在"新的一组"开始前加间距。
-         // 简单处理：只要不是第一组，且是该组的第一个元素，就加间距。
-      }
-      
       // 获取数据
       let value: string | number = '--'
       const raw = (s.data && s.data[dataIndex])
@@ -252,13 +270,10 @@ function buildUnifiedTooltipContent(axisValue: string, dataIndex: number, hovere
       }
       
       const displayValue = value === '--' ? value : (unit ? `${value}${unit}` : value)
-      
-      // 颜色：使用配置颜色或默认颜色
-      const itemColorArr = ['#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
-      // 查找 series 在该图表中的 index 以分配颜色
+
+      // 颜色：使用配置颜色或默认色板
       const seriesIndex = opt.series!.indexOf(s)
-      // 优先使用 opt.color，否则使用默认色板
-      const colorList = (opt.color && Array.isArray(opt.color) && opt.color.length) ? opt.color : itemColorArr
+      const colorList = (opt.color && Array.isArray(opt.color) && opt.color.length) ? opt.color : DEFAULT_CHART_COLORS
       const color = colorList[seriesIndex % colorList.length]
 
       // 如果是新的一组（且不是第一组），添加间距
@@ -266,13 +281,12 @@ function buildUnifiedTooltipContent(axisValue: string, dataIndex: number, hovere
          html += `<div style="height: 10px; margin: 4px 0;"></div>`
       }
       lastRenderedChartIndex = chartIndex
-      hasRenderedSeries = true
 
-      const marker = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background-color:${color};vertical-align:middle;"></span>`
+      const marker = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background-color:${escapeHtml(color)};vertical-align:middle;"></span>`
       html += `<div style="margin: 6px 0; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
         ${marker}
-        <span style="color: ${textColor}; font-size: 13px; flex: 1;">${s.name}</span>
-        <span style="color: ${textColor}; font-size: 13px; margin-left: auto; white-space: nowrap;">${displayValue}</span>
+        <span style="color: ${textColor}; font-size: 13px; flex: 1;">${escapeHtml(s.name)}</span>
+        <span style="color: ${textColor}; font-size: 13px; margin-left: auto; white-space: nowrap;">${escapeHtml(String(displayValue))}</span>
       </div>`
     })
   })
@@ -281,17 +295,22 @@ function buildUnifiedTooltipContent(axisValue: string, dataIndex: number, hovere
   return html
 }
 
-function showTooltip(event: any, axisValue: string, dataIndex: number, hoveredChartIndex: number) {
+function showTooltip(
+  event: MouseEvent | { event?: MouseEvent },
+  axisValue: string,
+  dataIndex: number,
+  hoveredChartIndex: number
+) {
   unifiedTooltipContent.value = buildUnifiedTooltipContent(axisValue, dataIndex, hoveredChartIndex)
-  const ev = event.event || event
-  const clientX = ev.clientX != null ? ev.clientX : ev.x
-  const clientY = ev.clientY != null ? ev.clientY : ev.y
+  const ev = 'event' in event && event.event ? event.event : (event as MouseEvent)
+  const clientX = ev.clientX ?? (ev as unknown as { x?: number }).x ?? 0
+  const clientY = ev.clientY ?? (ev as unknown as { y?: number }).y ?? 0
   unifiedTooltipStyle.value = {
-    left: `${(clientX || 0) + unifiedTooltipOffset}px`,
-    top: `${(clientY || 0) + unifiedTooltipOffset}px`,
+    left: `${clientX + TOOLTIP_OFFSET_PX}px`,
+    top: `${clientY + TOOLTIP_OFFSET_PX}px`,
     position: 'fixed',
     zIndex: '10000',
-    pointerEvents: 'none'
+    pointerEvents: 'none' as const
   }
   unifiedTooltipVisible.value = true
 }
@@ -320,7 +339,7 @@ function bindUnifiedTooltipEvents() {
     const zr = chart.getZr()
     if (!zr) return
 
-    const onMousemove = (zrEvent: any) => {
+    const onMousemove = (zrEvent: { offsetX: number; offsetY: number; event?: MouseEvent }) => {
       const point = [zrEvent.offsetX, zrEvent.offsetY]
       let dataIndex = -1
       try {
@@ -376,7 +395,9 @@ function initCharts() {
       if (!chart || chart.isDisposed()) {
         chart = eCharts.init(el)
       }
-      
+      if (props.groupId) {
+        ;(chart as eCharts.ECharts & { group: string }).group = props.groupId
+      }
       instances[i] = chart
       
       // 如果开启统一 Tooltip，则强制关闭自带 Tooltip
@@ -412,15 +433,17 @@ function initCharts() {
 
   myCharts.value = instances
   
-  // 绑定统一 Tooltip 事件
+  // 绑定统一 Tooltip 事件与联动
   if (props.unifiedTooltip) {
-    // 确保实例创建后再绑定
     nextTick(() => {
-       bindUnifiedTooltipEvents()
-       // 联动
-       if (instances.length > 1) {
-         eCharts.connect(instances.filter(Boolean) as eCharts.ECharts[])
-       }
+      bindUnifiedTooltipEvents()
+      if (instances.length <= 1) return
+      const validCharts = instances.filter(Boolean) as eCharts.ECharts[]
+      if (props.groupId) {
+        eCharts.connect(props.groupId)
+      } else {
+        connectedGroupIdRef.value = eCharts.connect(validCharts)
+      }
     })
   }
 }
@@ -429,7 +452,7 @@ const resizeHandler = debounce(() => {
   myCharts.value.forEach((chart) => {
     if (chart && !chart.isDisposed()) chart.resize()
   })
-}, 100)
+}, DEBOUNCE_RESIZE_MS)
 
 let resizeObserver: ResizeObserver | null = null
 
@@ -489,7 +512,12 @@ onUnmounted(() => {
     }
   })
   axisPointerHandlers = []
-  eCharts.disconnect()
+  if (props.groupId) {
+    eCharts.disconnect(props.groupId)
+  } else if (connectedGroupIdRef.value) {
+    eCharts.disconnect(connectedGroupIdRef.value)
+    connectedGroupIdRef.value = null
+  }
   myCharts.value = []
 })
 
@@ -523,7 +551,7 @@ const debouncedUpdate = debounce(() => {
   }
   
   nextTick(resizeHandler)
-}, 50)
+}, DEBOUNCE_UPDATE_MS)
 
 // 监听配置变化
 // 注意：如果 props.opt / props.opts 对象引用没有变化（只是内部属性变了），
@@ -614,9 +642,4 @@ watch(() => [props.opt, props.opts], () => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-.clearfix::after {
-  content: "";
-  display: table;
-  clear: both;
-}
 </style>
