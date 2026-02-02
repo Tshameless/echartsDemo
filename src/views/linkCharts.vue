@@ -2,7 +2,7 @@
   <div class="link-charts-demo">
     <div class="demo-title">LinkedCharts 多图联动演示</div>
 
-    <div class="charts-container" @mouseleave="hideUnifiedTooltip">
+    <div class="charts-container">
       <LinkedCharts
         ref="linkedChartsRef"
         v-if="chartOptionsList.length > 0"
@@ -12,7 +12,6 @@
         :height="250"
         :table-max-height="500"
         group-id="storage-monitor"
-        @chart-ready="(instances) => connectCharts(instances)"
       >
         <template #header>
           <div class="date-picker-group">
@@ -29,21 +28,12 @@
         </template>
       </LinkedCharts>
     </div>
-
-    <!-- 联动图表统一 tooltip -->
-    <div
-      v-show="unifiedTooltipVisible"
-      class="unified-tooltip"
-      :style="unifiedTooltipStyle"
-      v-html="unifiedTooltipContent"
-    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import LinkedCharts from '@/components/LinkedCharts/index.vue'
-import * as echarts from 'echarts'
 
 const selectedDate = ref('2026-01-01')
 const showChartView = ref(true)
@@ -220,189 +210,9 @@ const chartOptionsList = computed(() => [
 ])
 const chartTitles = ['储能运行监测', '电价信息', '光伏功率', '负荷功率']
 
-// 联动图表统一 tooltip
-const unifiedTooltipVisible = ref(false)
-const unifiedTooltipContent = ref('')
-const unifiedTooltipStyle = ref({ left: '0px', top: '0px' })
-const unifiedTooltipOffset = 16
-let axisPointerHandlers = []
-/** 当前联动的图表实例，用于读取图例选中状态，使 tooltip 与图中显示/隐藏一致 */
-const chartInstancesRef = ref([])
-
-// 统一 tooltip 中各项顺序及颜色（与四个图图例一致）
-const tooltipSeriesOrder = [
-  { name: '储能实时功率', chartIndex: 0, seriesIndex: 0, unit: 'kW', color: '#5470c6' },
-  { name: '储能日内调度计划', chartIndex: 0, seriesIndex: 1, unit: 'kW', color: '#fa8c16' },
-  { name: '储能实际控制指令', chartIndex: 0, seriesIndex: 2, unit: 'kW', color: '#9254de' },
-  { name: '储能SOC', chartIndex: 0, seriesIndex: 3, unit: '%', color: '#52c41a' },
-  { name: '预测下网电价', chartIndex: 1, seriesIndex: 0, unit: '元/kWh', color: '#ee6666' },
-  { name: '实际下网电价', chartIndex: 1, seriesIndex: 1, unit: '元/kWh', color: '#5470c6' },
-  { name: '光伏实时功率', chartIndex: 2, seriesIndex: 0, unit: 'kW', color: '#ee6666' },
-  { name: '光伏实时预测功率', chartIndex: 2, seriesIndex: 1, unit: 'kW', color: '#5470c6' },
-  { name: '负荷实时功率', chartIndex: 3, seriesIndex: 0, unit: 'kW', color: '#ee6666' },
-  { name: '负荷控制指令', chartIndex: 3, seriesIndex: 1, unit: 'kW', color: '#91cc75' },
-  { name: '负荷实时预测功率', chartIndex: 3, seriesIndex: 2, unit: 'kW', color: '#5470c6' },
-]
-
-/** 从图表实例获取图例选中状态：seriesName 是否当前为显示（未在图例中关闭） */
-function isSeriesSelected(chart, seriesName) {
-  if (!chart || chart.isDisposed()) return true
-  try {
-    const opt = chart.getOption()
-    const legend = opt?.legend
-    if (!legend || !legend.length) return true
-    const selected = legend[0]?.selected
-    if (selected == null) return true
-    return selected[seriesName] !== false
-  } catch (_) {
-    return true
-  }
-}
-
-/** hoveredChartIndex: 当前鼠标所在的图下标，该图对应的 series 会排在 tooltip 最上方 */
-function buildUnifiedTooltipContent(axisValue, dataIndex, chartOpts, chartInstances = [], hoveredChartIndex = 0) {
-  const textColor = '#333'
-  let html = `<div style="padding: 12px 16px; min-width: 200px;">`
-  html += `<div style="margin-bottom: 10px; font-size: 14px; color: ${textColor}; font-weight: 500;">${axisValue}</div>`
-
-  // 当前悬停的图排在前面，其余按原顺序
-  const ordered = [
-    ...tooltipSeriesOrder.filter((item) => item.chartIndex === hoveredChartIndex),
-    ...tooltipSeriesOrder.filter((item) => item.chartIndex !== hoveredChartIndex)
-  ]
-  let lastRenderedChartIndex = -1
-  ordered.forEach((item) => {
-    const chart = chartInstances[item.chartIndex]
-    if (chart && !isSeriesSelected(chart, item.name)) return
-    // 不同图之间加间距
-    if (lastRenderedChartIndex >= 0 && item.chartIndex !== lastRenderedChartIndex) {
-      html += `<div style="height: 10px; margin: 4px 0;"></div>`
-    }
-    lastRenderedChartIndex = item.chartIndex
-    let value = '--'
-    const opt = chartOpts[item.chartIndex]
-    const s = opt?.series?.[item.seriesIndex]
-    if (s) {
-      const raw = (s.rawData && s.rawData[dataIndex]) ?? (s.data && s.data[dataIndex])
-      value = raw != null ? raw : '--'
-    }
-    const displayValue = value === '--' ? value : (item.unit ? `${value}${item.unit}` : value)
-    const marker = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background-color:${item.color};vertical-align:middle;"></span>`
-    html += `<div style="margin: 6px 0; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
-      ${marker}
-      <span style="color: ${textColor}; font-size: 13px; flex: 1;">${item.name}</span>
-      <span style="color: ${textColor}; font-size: 13px; margin-left: auto; white-space: nowrap;">${displayValue}</span>
-    </div>`
-  })
-  html += `</div>`
-  return html
-}
-
-function showUnifiedTooltip(event, axisValue, dataIndex, hoveredChartIndex = 0) {
-  const instances = chartInstancesRef.value ?? []
-  unifiedTooltipContent.value = buildUnifiedTooltipContent(axisValue, dataIndex, chartOptionsList.value, instances, hoveredChartIndex)
-  const ev = event.event || event
-  const clientX = ev.clientX != null ? ev.clientX : ev.x
-  const clientY = ev.clientY != null ? ev.clientY : ev.y
-  unifiedTooltipStyle.value = {
-    left: `${(clientX || 0) + unifiedTooltipOffset}px`,
-    top: `${(clientY || 0) + unifiedTooltipOffset}px`,
-    position: 'fixed',
-    zIndex: 10000,
-    pointerEvents: 'none'
-  }
-  unifiedTooltipVisible.value = true
-}
-
-function hideUnifiedTooltip() {
-  unifiedTooltipVisible.value = false
-}
-
 const handleDateChange = (value) => {
   console.log('当前时间:', value, selectedDate.value)
 }
-
-const connectCharts = (instancesFromEvent) => {
-  const raw = instancesFromEvent ?? linkedChartsRef.value?.myCharts?.value
-  const instances = Array.isArray(raw) ? raw : (raw ? [raw] : [])
-  if (!instances.length) return
-
-  chartInstancesRef.value = instances
-
-  nextTick(() => {
-    echarts.connect(instances)
-
-    axisPointerHandlers.forEach(({ zr, onMove, onOut }) => {
-      if (zr) {
-        zr.off('mousemove', onMove)
-        zr.off('globalout', onOut)
-      }
-    })
-    axisPointerHandlers = []
-
-    const chartOpts = chartOptionsList.value
-    const timeData = chartOpts[0]?.timeList || timeList
-    const len = timeData ? timeData.length : 0
-
-    instances.forEach((chart, chartIndex) => {
-        const zr = chart.getZr()
-        if (!zr) return
-
-        const onMousemove = (zrEvent) => {
-          const point = [zrEvent.offsetX, zrEvent.offsetY]
-          let dataIndex = -1
-          try {
-            const result = chart.convertFromPixel('grid', point)
-            if (result != null && result.length >= 1) {
-              const raw = result[0]
-              dataIndex = typeof raw === 'number' ? Math.round(raw) : timeData.indexOf(raw)
-              if (dataIndex < 0 && typeof raw === 'string') dataIndex = timeData.indexOf(raw)
-            }
-          } catch (_) {
-            dataIndex = -1
-          }
-          if (dataIndex < 0 || dataIndex >= len) {
-            hideUnifiedTooltip()
-            return
-          }
-          const axisValue = timeData[dataIndex] ?? dataIndex
-          const ev = zrEvent.event || zrEvent
-          showUnifiedTooltip(ev, axisValue, dataIndex, chartIndex)
-        }
-
-        const onGlobalOut = () => {
-          hideUnifiedTooltip()
-        }
-
-        zr.on('mousemove', onMousemove)
-        zr.on('globalout', onGlobalOut)
-        axisPointerHandlers.push({
-          zr,
-          onMove: onMousemove,
-          onOut: onGlobalOut
-        })
-    })
-  })
-}
-
-onMounted(() => {
-  nextTick(() => {
-    setTimeout(() => {
-      connectCharts()
-    }, 300)
-  })
-})
-
-onUnmounted(() => {
-  axisPointerHandlers.forEach(({ zr, onMove, onOut }) => {
-    if (zr) {
-      zr.off('mousemove', onMove)
-      zr.off('globalout', onOut)
-    }
-  })
-  axisPointerHandlers = []
-  echarts.disconnect()
-})
 </script>
 
 <style scoped lang="scss">
@@ -435,12 +245,5 @@ onUnmounted(() => {
 .date-label {
   font-size: 14px;
   color: #606266;
-}
-
-.unified-tooltip {
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 </style>
