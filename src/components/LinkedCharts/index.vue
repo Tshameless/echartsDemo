@@ -31,7 +31,7 @@
         </template>
       </div>
     </div>
-    <div v-show="!displayChart" class="table-content">
+     <div v-show="!displayChart" class="table-content">
       <n-data-table
         :columns="dataTableColumns"
         :data="tableRows"
@@ -41,7 +41,25 @@
         :bordered="true"
       />
     </div>
-
+     <!-- <div v-show="!displayChart" class="table-content">
+      <el-table
+        :data="tableRows"
+        :max-height="tableMaxHeight"
+        stripe
+        border
+        style="width: 100%"
+      >
+        <el-table-column prop="时间" label="时间" min-width="80" fixed />
+        <el-table-column
+          v-for="col in tableColumns"
+          :key="col.prop"
+          :prop="col.prop"
+          :label="col.label"
+          min-width="120"
+          show-overflow-tooltip
+        />
+      </el-table>
+    </div> -->
     <!-- 联动图表统一 tooltip -->
     <div
       v-if="unifiedTooltip && chartList.length > 0"
@@ -57,21 +75,17 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
 import * as eCharts from 'echarts'
 import { debounce } from 'lodash-es'
-import { NDataTable } from 'naive-ui'
 import type { ChartOptions, ChartSeriesData } from '@/components/lineEcharts/types'
 import { useChartTable } from '@/components/lineEcharts/useChartTable'
 import { escapeHtml } from '@/components/lineEcharts/utils'
 import { useLinkedChartOption, DEFAULT_CHART_COLORS } from './useLinkedChartOption'
 
-/** 防抖：resize */
-const DEBOUNCE_RESIZE_MS = 100
 /** 防抖：配置更新 */
 const DEBOUNCE_UPDATE_MS = 50
 /** 统一 Tooltip 相对鼠标的偏移（px） */
 const TOOLTIP_OFFSET_PX = 16
 /** 表格横向滚动宽度（px） */
 const TABLE_SCROLL_X = 1200
-
 interface Props {
   /** 单图配置（与 opts 二选一） */
   opt?: ChartOptions
@@ -443,11 +457,21 @@ function initCharts() {
   }
 }
 
-const resizeHandler = debounce(() => {
-  myCharts.value.forEach((chart) => {
-    if (chart && !chart.isDisposed()) chart.resize()
+let resizeAnimationFrame: number | null = null
+
+const resizeHandler = () => {
+  if (resizeAnimationFrame !== null) {
+    cancelAnimationFrame(resizeAnimationFrame)
+  }
+  resizeAnimationFrame = requestAnimationFrame(() => {
+    myCharts.value.forEach((chart) => {
+      if (chart && !chart.isDisposed()) {
+        chart.resize({ animation: { duration: 0 } })
+      }
+    })
+    resizeAnimationFrame = null
   })
-}, DEBOUNCE_RESIZE_MS)
+}
 
 let resizeObserver: ResizeObserver | null = null
 
@@ -480,8 +504,8 @@ onMounted(() => {
         }
         
         if (containerRef.value) {
-          resizeObserver = new ResizeObserver(() => requestAnimationFrame(resizeHandler))
-          resizeObserver.observe(containerRef.value)
+          resizeObserver = new ResizeObserver(resizeHandler)
+          resizeObserver.observe(containerRef.value, { box: 'border-box' })
         }
       }
     })
@@ -489,6 +513,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (resizeAnimationFrame !== null) {
+    cancelAnimationFrame(resizeAnimationFrame)
+    resizeAnimationFrame = null
+  }
   if (resizeObserver && containerRef.value) {
     resizeObserver.disconnect()
     resizeObserver = null
@@ -613,7 +641,7 @@ watch(() => [props.opt, props.opts], () => {
 }
 
 .chart-box {
-  width: 95%;
+  width: 100%;
 }
 
 .chart-item-wrap {
