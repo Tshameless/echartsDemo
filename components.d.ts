@@ -21,6 +21,7 @@ declare module 'vue' {
     LineEcharts: typeof import('./src/components/lineEcharts/index.vue')['default']
     'LineEcharts_version1.0': typeof import('./src/components/lineEcharts_version1.0.vue')['default']
     'LineEcharts_version1.01A': typeof import('./src/components/lineEcharts_version1.01A.vue')['default']
+    LinkedCharts: typeof import('./src/components/LinkedCharts/index.vue')['default']
     NButton: typeof import('naive-ui')['NButton']
     NDataTable: typeof import('naive-ui')['NDataTable']
     NInputNumber: typeof import('naive-ui')['NInputNumber']
