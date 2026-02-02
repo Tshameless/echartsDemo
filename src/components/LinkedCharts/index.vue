@@ -233,66 +233,61 @@ function isSeriesSelected(chart: eCharts.ECharts, seriesName: string): boolean {
   }
 }
 
+/** 从系列/图表配置解析显示单位 */
+function getSeriesDisplayUnit(s: ChartSeriesData, opt: ChartOptions): string {
+  if (s.tableUnit) return String(s.tableUnit).replace(/^\(|\)$/g, '')
+  return opt.yName?.includes('：') ? (opt.yName.split('：')[1] || '') : (opt.yName || '')
+}
+
+/** Tooltip 内联样式常量，便于维护 */
+const TOOLTIP_STYLES = {
+  wrap: 'padding: 12px 16px; min-width: 200px;',
+  title: 'margin-bottom: 10px; font-size: 14px; color: #333; font-weight: 500;',
+  divider: 'height: 10px; margin: 4px 0;',
+  row: 'margin: 6px 0; display: flex; align-items: center; justify-content: space-between; gap: 24px;',
+  rowText: 'color: #333; font-size: 13px;',
+  marker: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;'
+} as const
+
+/** 渲染单条 series 行 HTML（内部已转义） */
+function renderTooltipRow(name: string, displayValue: string, color: string): string {
+  const marker = `<span style="${TOOLTIP_STYLES.marker}background-color:${escapeHtml(color)};"></span>`
+  return `<div style="${TOOLTIP_STYLES.row}">${marker}<span style="${TOOLTIP_STYLES.rowText}; flex: 1;">${escapeHtml(name)}</span><span style="${TOOLTIP_STYLES.rowText}; margin-left: auto; white-space: nowrap;">${escapeHtml(displayValue)}</span></div>`
+}
+
 /** 构建统一 Tooltip 内容（内部已转义，可安全用于 v-html） */
 function buildUnifiedTooltipContent(axisValue: string, dataIndex: number, hoveredChartIndex: number): string {
-  const textColor = '#333'
-  let html = `<div style="padding: 12px 16px; min-width: 200px;">`
-  html += `<div style="margin-bottom: 10px; font-size: 14px; color: ${textColor}; font-weight: 500;">${escapeHtml(axisValue)}</div>`
+  const charts = chartList.value
+  const indices = charts.map((_, i) => i)
+  const sortedChartIndices = [hoveredChartIndex, ...indices.filter(i => i !== hoveredChartIndex)]
 
-  // 排序：当前悬停的图表排在最前，其余按顺序
-  const sortedChartIndices = [
-    hoveredChartIndex,
-    ...chartList.value.map((_, i) => i).filter(i => i !== hoveredChartIndex)
-  ]
+  const rows: string[] = []
+  let needDivider = false
 
-  let lastRenderedChartIndex = -1
-
-  sortedChartIndices.forEach(chartIndex => {
+  for (const chartIndex of sortedChartIndices) {
     const chart = myCharts.value[chartIndex]
-    const opt = chartList.value[chartIndex]
-    if (!chart || !opt || !opt.series) return
+    const opt = charts[chartIndex]
+    if (!chart || !opt?.series) continue
 
-    opt.series.forEach((s) => {
-      if (!isSeriesSelected(chart, s.name)) return
+    if (needDivider) rows.push(`<div style="${TOOLTIP_STYLES.divider}"></div>`)
+    needDivider = true
 
-      // 获取数据
-      let value: string | number = '--'
-      const raw = (s.data && s.data[dataIndex])
-      value = raw != null ? raw : '--'
-      
-      // 格式化单位
-      let unit = ''
-      if (s.tableUnit) {
-        unit = String(s.tableUnit).replace(/^\(|\)$/g, '')
-      } else {
-        // 尝试从 yName 获取单位 (简化逻辑，详细逻辑可参考 useLinkedChartOption)
-        unit = opt.yName?.includes('：') ? opt.yName.split('：')[1] || '' : (opt.yName || '')
-      }
-      
+    const colorList = Array.isArray(opt.color) && opt.color.length > 0 ? opt.color : DEFAULT_CHART_COLORS
+
+    for (let seriesIndex = 0; seriesIndex < opt.series.length; seriesIndex++) {
+      const s = opt.series[seriesIndex]
+      if (!isSeriesSelected(chart, s.name)) continue
+
+      const raw = s.data?.[dataIndex]
+      const value = raw != null ? raw : '--'
+      const unit = getSeriesDisplayUnit(s, opt)
       const displayValue = value === '--' ? value : (unit ? `${value}${unit}` : value)
-
-      // 颜色：使用配置颜色或默认色板
-      const seriesIndex = opt.series!.indexOf(s)
-      const colorList = (opt.color && Array.isArray(opt.color) && opt.color.length) ? opt.color : DEFAULT_CHART_COLORS
       const color = colorList[seriesIndex % colorList.length]
+      rows.push(renderTooltipRow(s.name, String(displayValue), color))
+    }
+  }
 
-      // 如果是新的一组（且不是第一组），添加间距
-      if (chartIndex !== lastRenderedChartIndex && lastRenderedChartIndex !== -1) {
-         html += `<div style="height: 10px; margin: 4px 0;"></div>`
-      }
-      lastRenderedChartIndex = chartIndex
-
-      const marker = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background-color:${escapeHtml(color)};vertical-align:middle;"></span>`
-      html += `<div style="margin: 6px 0; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
-        ${marker}
-        <span style="color: ${textColor}; font-size: 13px; flex: 1;">${escapeHtml(s.name)}</span>
-        <span style="color: ${textColor}; font-size: 13px; margin-left: auto; white-space: nowrap;">${escapeHtml(String(displayValue))}</span>
-      </div>`
-    })
-  })
-
-  html += `</div>`
-  return html
+  return `<div style="${TOOLTIP_STYLES.wrap}"><div style="${TOOLTIP_STYLES.title}">${escapeHtml(axisValue)}</div>${rows.join('')}</div>`
 }
 
 function showTooltip(
