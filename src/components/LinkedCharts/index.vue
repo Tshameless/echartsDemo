@@ -31,7 +31,7 @@
         </template>
       </div>
     </div>
-     <div v-show="!displayChart" class="table-content">
+      <div v-show="!displayChart" class="table-content">
       <n-data-table
         :columns="dataTableColumns"
         :data="tableRows"
@@ -60,14 +60,17 @@
         />
       </el-table>
     </div> -->
-    <!-- 联动图表统一 tooltip -->
-    <div
-      v-if="unifiedTooltip && chartList.length > 0"
-      v-show="unifiedTooltipVisible"
-      class="unified-tooltip"
-      :style="unifiedTooltipStyle"
-      v-html="unifiedTooltipContent"
-    />
+    <!-- 联动图表统一 tooltip：Teleport 到 body 避免被父级 overflow 裁切，并做视口边界定位 -->
+    <Teleport to="body">
+      <div
+        v-if="unifiedTooltip && chartList.length > 0"
+        v-show="unifiedTooltipVisible"
+        ref="unifiedTooltipRef"
+        class="unified-tooltip"
+        :style="unifiedTooltipStyle"
+        v-html="unifiedTooltipContent"
+      />
+    </Teleport>
   </div>
 </template>
 
@@ -222,6 +225,7 @@ const { updateChartOption, bindLegendSelectChanged } = useLinkedChartOption()
 const unifiedTooltipVisible = ref(false)
 const unifiedTooltipContent = ref('')
 const unifiedTooltipStyle = ref<Record<string, string>>({ left: '0px', top: '0px' })
+const unifiedTooltipRef = ref<HTMLElement | null>(null)
 /** 统一 Tooltip 事件句柄（用于解绑） */
 interface AxisPointerHandler {
   zr: ReturnType<eCharts.ECharts['getZr']> | undefined
@@ -322,6 +326,26 @@ function showTooltip(
     pointerEvents: 'none' as const
   }
   unifiedTooltipVisible.value = true
+  // 下一帧根据实际尺寸做视口边界修正，避免 tooltip 在图表底部/右侧时被裁切
+  nextTick(() => {
+    const el = unifiedTooltipRef.value
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const gap = 8
+    let left = clientX + TOOLTIP_OFFSET_PX
+    let top = clientY + TOOLTIP_OFFSET_PX
+    if (left + rect.width + gap > vw) left = clientX - rect.width - TOOLTIP_OFFSET_PX
+    if (left < gap) left = gap
+    if (top + rect.height + gap > vh) top = clientY - rect.height - TOOLTIP_OFFSET_PX
+    if (top < gap) top = gap
+    unifiedTooltipStyle.value = {
+      ...unifiedTooltipStyle.value,
+      left: `${left}px`,
+      top: `${top}px`
+    }
+  })
 }
 
 function hideTooltip() {
