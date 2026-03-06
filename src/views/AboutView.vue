@@ -1,6 +1,9 @@
 <template>
   <div class="container" id="home-root">
-
+    <div class="lineEChartsBox">
+      <lineECharts v-if="Object.keys(eChartsDataSpecial).length > 0" :opt="eChartsDataSpecial" :height="350">
+      </lineECharts>
+    </div>
     <div class="lineEChartsBox">
       <lineECharts v-if="Object.keys(eChartsData2).length > 0" :opt="eChartsData2" :height="350"></lineECharts>
     </div>
@@ -15,10 +18,11 @@
     </div>
 
     <div class="lineEChartsBox">
-      <lineECharts  ref="chartRef" v-if="Object.keys(eChartsData4).length > 0" :opt="eChartsData4" :height="350"></lineECharts>
+      <lineECharts ref="chartRef" v-if="Object.keys(eChartsData4).length > 0" :opt="eChartsData4" :height="350">
+      </lineECharts>
     </div>
-  <div class="lineEChartsBox">
-      <lineECharts  v-if="Object.keys(eChartsData5).length > 0" :opt="eChartsData5" :height="350"></lineECharts>
+    <div class="lineEChartsBox">
+      <lineECharts v-if="Object.keys(eChartsData5).length > 0" :opt="eChartsData5" :height="350"></lineECharts>
     </div>
   </div>
 </template>
@@ -28,14 +32,71 @@ import lineECharts from "../components/lineEcharts/index.vue"
 import dayjs from "dayjs"
 const eChartsData = ref({})
 const eChartsData2 = ref({})
+const eChartsDataSpecial = ref({})
 const eChartsData3 = ref({})
 const eChartsData4 = ref({})
 const eChartsData5 = ref({})
 const eleEchartsData = ref({})
 let resizeObserver = null
-const chartRef=ref()
+const chartRef = ref()
 onMounted(() => {
   nextTick(() => {
+    // 修改 eChartsDataSpecial 为热力图配置
+    eChartsDataSpecial.value = {
+      title: {
+        text: '1月份热力图',
+        left: 'center'
+      },
+      tooltip: {
+        position: 'top'
+      },
+      xAxis: {
+        type: 'category',
+        data: Array.from({ length: 31 }, (_, i) => `${i + 1}日`),
+        splitArea: {
+          show: true
+        }
+      },
+      yAxis: {
+        type: 'category',
+        data: Array.from({ length: 24 }, (_, i) => {
+          const hour = i.toString().padStart(2, '0');
+          return `${hour}:00`;
+        }),
+        splitArea: {
+          show: true
+        }
+      },
+      visualMap: {
+        min: 0,
+        max: 100,
+        calculable: true,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: '0%',
+        show:false
+      },
+      series: [{
+        name: '热力值',
+        type: 'heatmap',
+        data: Array.from({ length: 31 }, (_, day) => 
+          Array.from({ length: 24 }, (_, hour) => [
+            day,
+            hour,
+            Math.floor(Math.random() * 100) // 随机生成0-100的热力值
+          ])
+        ).flat(),
+        label: {
+          show: false
+        },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        }
+      }]
+    };
     eChartsData.value = {
       title: '时间',
       // timeList: Array.from(Array(25).keys()).map(n => n),
@@ -86,7 +147,7 @@ onMounted(() => {
       deleteFirstPoint: true,
       yName: 'MW',
       yName1: '元/MWh',
-      compensateType:'end',
+      compensateType: 'end',
       series: [
         {
           name: "负荷设备功率",
@@ -124,9 +185,9 @@ onMounted(() => {
     eChartsData3.value = {
       title: '时间',
       // timeList: Array.from(Array(24).keys()).map(n => dayjs().add(n, 'hours').format('HH:mm')),
-      timeList: Array.from({ length: 24 }, (_, index) => 
-  dayjs().startOf('day').add(index, 'hour').format('HH:mm')
-),
+      timeList: Array.from({ length: 24 }, (_, index) =>
+        dayjs().startOf('day').add(index, 'hour').format('HH:mm')
+      ),
       showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
@@ -137,7 +198,7 @@ onMounted(() => {
       // deleteLastPoint: true,
       yName: 'MW',
       yName1: '元/MWh',
-        compensateType:'end',
+      compensateType: 'end',
       visualMap: currentIndex.value != -1 ? [
         {
           show: false,
@@ -191,7 +252,7 @@ onMounted(() => {
         {
           name: "实时负荷",
           type: "line",
-          step:'end',
+          step: 'end',
           tableUnit: '(元/MWh)',
           data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
             return n * 5
@@ -254,7 +315,7 @@ onMounted(() => {
         },
       ]
     }
-        eChartsData5.value = {
+    eChartsData5.value = {
       title: '时间',
       timeList: ['运行', '离线', '故障', '报警', '无信息'],
       showTable: true,
@@ -341,15 +402,15 @@ onMounted(() => {
 
     }
   })
- nextTick(() => {
-        const mainContent = document.getElementById('home-root')
-        if (mainContent) {
-            resizeObserver = new window.ResizeObserver(() => {
-                chartRef.value?.resizeHandler && chartRef.value.resizeHandler()
-            })
-            resizeObserver.observe(mainContent)
-        }
-    })
+  nextTick(() => {
+    const mainContent = document.getElementById('home-root')
+    if (mainContent) {
+      resizeObserver = new window.ResizeObserver(() => {
+        chartRef.value?.resizeHandler && chartRef.value.resizeHandler()
+      })
+      resizeObserver.observe(mainContent)
+    }
+  })
 
 })
 </script>

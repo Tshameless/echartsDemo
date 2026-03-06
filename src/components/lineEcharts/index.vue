@@ -14,6 +14,17 @@
                 :data="tableData" :max-height="height - 49" striped />
         </div>
     </div>
+    <!-- 
+         <div class="chart-container">
+        <el-switch v-model="showValue" v-if="showTable" class="chart-switch" active-text="图形" inactive-text="图表" />
+        <div class="clearfix">
+            <div v-show="showValue" ref="eChartsBoxRef" class="chart-box" :style="{ height: `${height}px`, maxHeight: `${height}px` }"></div>
+            <el-table v-show="!showValue" class="chart-table" :data="tableData" :max-height="`${height - 49}px`" stripe>
+                <el-table-column v-for="col in tableHeader" :key="col.key" :prop="col.key" :label="col.title" />
+            </el-table>
+        </div>
+    </div>
+     -->
 </template>
 <script lang="ts" setup>
 import { toRefs, onMounted, ref, onUnmounted, watch, nextTick, computed, shallowRef } from 'vue'

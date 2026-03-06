@@ -20,6 +20,11 @@ const router = createRouter({
       name:'linkCharts',
       component: () => import('../views/linkCharts.vue'),
 
+    },
+    {
+      path:'/threeJSMap',
+      name:'threeJSMap',
+      component: () => import('../views/threeJSMap.vue'),
     }
   ],
 })
