@@ -25,6 +25,11 @@ const router = createRouter({
       path:'/threeJSMap',
       name:'threeJSMap',
       component: () => import('../views/threeJSMap.vue'),
+    },
+    {
+      path:'/echartsMap',
+      name:'echartsMap',
+      component: () => import('../views/echartsMap.vue'),
     }
   ],
 })

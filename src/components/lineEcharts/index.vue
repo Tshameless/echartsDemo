@@ -1,30 +1,35 @@
 <template>
-    <div class="chart-container">
+   <div class="chart-container">
         <n-switch v-model:value="showValue" :round="false" v-if="showTable" class="chart-switch">
             <template #checked>
                 图形
             </template>
-            <template #unchecked>
+<template #unchecked>
                 图表
             </template>
-        </n-switch>
-        <div class="clearfix">
-            <div v-show="showValue" ref="eChartsBoxRef" class="chart-box" :style="{ height: `${height}px`, maxHeight: `${height}px` }"></div>
-            <n-data-table v-show="!showValue" class="chart-table" :single-line="false" :columns="tableHeader"
-                :data="tableData" :max-height="height - 49" striped />
-        </div>
+</n-switch>
+<div class="clearfix">
+    <div v-show="showValue" ref="eChartsBoxRef" class="chart-box"
+        :style="{ height: isNaN(Number(height)) ? height : `${height}px`, maxHeight: isNaN(Number(height)) ? height : `${height}px` }">
     </div>
-    <!-- 
-         <div class="chart-container">
+    <n-data-table v-show="!showValue" class="chart-table" :single-line="false" :columns="tableHeader" :data="tableData"
+        :max-height="isNaN(Number(height)) ? undefined : (Number(height) - 49)" striped />
+</div>
+</div> 
+
+    <!--  <div class="chart-container">
         <el-switch v-model="showValue" v-if="showTable" class="chart-switch" active-text="图形" inactive-text="图表" />
         <div class="clearfix">
-            <div v-show="showValue" ref="eChartsBoxRef" class="chart-box" :style="{ height: `${height}px`, maxHeight: `${height}px` }"></div>
-            <el-table v-show="!showValue" class="chart-table" :data="tableData" :max-height="`${height - 49}px`" stripe>
+            <div v-show="showValue" ref="eChartsBoxRef" class="chart-box"
+                :style="{ height: isNaN(Number(height)) ? height : `${height}px`, maxHeight: isNaN(Number(height)) ? height : `${height}px` }">
+            </div>
+            <el-table v-show="!showValue" class="chart-table" :data="tableData"
+                :max-height="isNaN(Number(height)) ? undefined : (Number(height) - 49)" stripe>
                 <el-table-column v-for="col in tableHeader" :key="col.key" :prop="col.key" :label="col.title" />
             </el-table>
         </div>
-    </div>
-     -->
+    </div>-->
+
 </template>
 <script lang="ts" setup>
 import { toRefs, onMounted, ref, onUnmounted, watch, nextTick, computed, shallowRef } from 'vue'
@@ -39,11 +44,13 @@ import { useChartOption } from './useChartOption'
 // 定义 props 类型
 interface LineChartProps {
     opt: ChartOptions
-    height: number
+    height?: number | string
 }
 
 // 定义 props 并设置默认值
-const props = defineProps<LineChartProps>()
+const props = withDefaults(defineProps<LineChartProps>(), {
+    height: 400
+})
 
 // 解构 props
 const { opt } = toRefs(props)
@@ -306,10 +313,10 @@ watch(() => processedOpt.value, (newVal) => {
     z-index: 9;
 }
 .chart-box {
-    width: 95%;
+    width: 100%;
 }
 .chart-table {
-    width: 95%;
+    width: 100%;
 }
 .clearfix::after {
     content: "";

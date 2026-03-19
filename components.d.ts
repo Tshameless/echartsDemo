@@ -10,6 +10,8 @@ declare module 'vue' {
   export interface GlobalComponents {
     copy: typeof import('./src/components/lineEcharts copy.vue')['default']
     Echarts: typeof import('./src/components/Echarts.vue')['default']
+    EchartsMap: typeof import('./src/components/echartsMap.vue')['default']
+    EchartsMap_fixed: typeof import('./src/components/echartsMap_fixed.vue')['default']
     FinalVersion: typeof import('./src/components/finalVersion.vue')['default']
     ForCenter: typeof import('./src/components/forCenter.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
