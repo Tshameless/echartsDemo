@@ -212,7 +212,8 @@ const updateChart = (item: ChartOptions) => {
 
     const finalOption = getCommonOption(item, {
         yAxis: finalYAxis,
-        series: item.series
+        series: item.series,
+           graphic: item.graphic
     })
 
     // 使用 notMerge: true 确保状态重置，避免旧数据残留

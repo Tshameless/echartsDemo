@@ -120,5 +120,6 @@ export interface ChartOptions {
     deleteLastPoint?: boolean //删除最后一个数据点
     deleteFirstPoint?: boolean //删除第一个数据点
     showTable?: boolean //默认显示表格
-    visualMap?: any
+    visualMap?: any //默认可视化映射
+     graphic?: any //默认图形
 }

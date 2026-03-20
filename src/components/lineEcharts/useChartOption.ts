@@ -35,7 +35,7 @@ export const useChartOption = () => {
             },
             formatter: item.legendFormatter ?? ((name: string) => `{one|${name}}`),
         },
-        color: itemColorArr,
+        color: item.color ?? itemColorArr,
         dataZoom: item.dataZoom ?? [
             {
                 type: "slider",

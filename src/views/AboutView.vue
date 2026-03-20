@@ -24,12 +24,19 @@
     <div class="lineEChartsBox">
       <lineECharts v-if="Object.keys(eChartsData5).length > 0" :opt="eChartsData5" :height="350"></lineECharts>
     </div>
+    <div class="lineEChartsBox" style="border: 1px  solid red;">
+      <lineECharts v-if="Object.keys(powerConsumptionOpt).length > 0" :opt="powerConsumptionOpt" class="chart-canvas"
+        :height="170" />
+    </div>
   </div>
 </template>
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue"
 import lineECharts from "../components/lineEcharts/index.vue"
+// 导入中心图标图片资源
+import usePowerIcon from '../assets/img/usePowerIcon.png';
 import dayjs from "dayjs"
+
 const eChartsData = ref({})
 const eChartsData2 = ref({})
 const eChartsDataSpecial = ref({})
@@ -38,7 +45,126 @@ const eChartsData4 = ref({})
 const eChartsData5 = ref({})
 const eleEchartsData = ref({})
 let resizeObserver = null
+const powerConsumptionOpt = ref<any>({})
+
 const chartRef = ref()
+const getDonutOption = (colors: string[], data: any[], icon: any) => {
+  const total = data[0].value;
+  const part = data[1].value;
+  const mainColor = colors[0];
+  const subColor = colors[1];
+  return {
+    color: colors,
+    legend: {
+      show: true, top: 'center', right: '0%',
+      itemWidth: 10,
+      itemHeight: 10,
+      itemGap: 10,
+      textStyle: {
+        color: '#fff',
+        fontSize: 12,
+        rich: {
+          name: {
+            color: '#fff',
+            width: 60,
+          },
+          value: {
+            color: '#fff',
+            width: 40,
+            align: 'right'
+          }
+        }
+      },
+      formatter: (name: string) => {
+        const val = name === '总额' ? total : (name === '占比' ? part : '');
+        return `{name|${name}}{value|${val}}`;
+      }
+    },
+    tooltip: {
+      show: true,
+      trigger: 'item',
+      formatter: (params: any) => {
+        if (params.seriesName === 'Outer') {
+          return `总额: ${params.value}`;
+        }
+        if (params.name === 'Part') {
+          return `占比: ${params.value}`;
+        }
+        return null;
+      }
+    },
+    xAxis: [],
+    yAxis: [],
+    dataZoom: [],
+    series: [
+      // 内层：占比部分 (b)
+      {
+        name: 'Inner',
+        type: 'pie',
+        radius: ['54%', '70%'],
+        center: ['30%', '50%'],
+        silent: false,
+        label: { show: false },
+        startAngle: 180,
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10
+        },
+        data: [
+          {
+            value: part,
+            name: '占比',
+            itemStyle: {
+              color: subColor
+            }
+          },
+          {
+            value: total - part,
+            name: '',
+            itemStyle: { color: 'transparent' },
+            tooltip: { show: false }
+          }
+        ]
+      },
+      // 外层：总量部分 (a)
+      {
+        name: 'Outer',
+        type: 'pie',
+        radius: ['72%', '88%'],
+        center: ['30%', '50%'],
+        label: { show: false },
+        startAngle: 90,
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10
+        },
+        data: [
+          {
+            value: total,
+            name: '总额',
+            itemStyle: {
+              color: mainColor,
+              opacity: 0.9
+            }
+          }
+        ]
+      }
+    ],
+    graphic: [
+      {
+        type: 'image',
+        left: '28%',
+        top: 'center',
+        style: {
+          // 使用传入的 icon 资源（即 usePowerIcon）
+          image: icon,
+          width: 32,
+          height: 32
+        }
+      }
+    ]
+  }
+}
 onMounted(() => {
   nextTick(() => {
     // 修改 eChartsDataSpecial 为热力图配置
@@ -74,12 +200,12 @@ onMounted(() => {
         orient: 'horizontal',
         left: 'center',
         bottom: '0%',
-        show:false
+        show: false
       },
       series: [{
         name: '热力值',
         type: 'heatmap',
-        data: Array.from({ length: 31 }, (_, day) => 
+        data: Array.from({ length: 31 }, (_, day) =>
           Array.from({ length: 24 }, (_, hour) => [
             day,
             hour,
@@ -411,7 +537,8 @@ onMounted(() => {
       resizeObserver.observe(mainContent)
     }
   })
-
+  // 初始化用电量环形图，传入图标资源
+  powerConsumptionOpt.value = getDonutOption(['#5A7FFF', '#42C090'], [{ value: 100 }, { value: 50 }], usePowerIcon)
 })
 </script>
 <style>
