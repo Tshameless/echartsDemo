@@ -7,7 +7,7 @@ const itemColorArr = ['red', '#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#99999
 export const useChartOption = () => {
     // 公共 option 生成
     const getCommonOption = (item: ChartOptions, extra = {}) => ({
-        tooltip: {
+            tooltip: item.tooltip ? item.tooltip : {
             show: item.tooltipShow ?? true,
             trigger: item.tooltipTrigger ?? 'axis',
             backgroundColor: item.tooltipBackgroundColor ?? "rgba(0,0,0,.3)",
