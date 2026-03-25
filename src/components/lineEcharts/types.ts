@@ -4,9 +4,17 @@ export interface ChartSeriesData {
     type: string   //系列类型
     stack?: string  //堆叠
     yAxisIndex?: number  //Y轴索引，只有doubleY为true时生效，否则不传这个属性
-    data: Array<number | null>  //数据
+    data: Array<number | null | { value: number; name: string }>  //数据
     rawData?: (number | null)[]  //原始数据，用于表格/统一 Tooltip 等，不传则用 data
     tableUnit?: string  //表格列单位
+    barWidth?: number | string
+    smooth?: boolean | number
+    radius?: string | (string | number)[]
+    center?: (string | number)[]
+    itemStyle?: any
+    label?: any
+    emphasis?: any
+    avoidLabelOverlap?: boolean
 }
 
 export interface AxisLabel {
@@ -120,6 +128,6 @@ export interface ChartOptions {
     deleteLastPoint?: boolean //删除最后一个数据点
     deleteFirstPoint?: boolean //删除第一个数据点
     showTable?: boolean //默认显示表格
-    visualMap?: any //默认可视化映射
-     graphic?: any //默认图形
+    visualMap?: any
+    graphic?: any
 }
