@@ -12,10 +12,22 @@ export function escapeHtml(s: string | number): string {
         .replace(/'/g, '&#39;')
 }
 
+/** 获取“整”数，例如 121 -> 130, 1234 -> 1300 */
+const getNiceValue = (val: number): number => {
+    if (val === 0) return 0;
+    const absVal = Math.abs(val);
+    // 获取数量级
+    const order = Math.floor(Math.log10(absVal));
+    // 保持两位有效数字的精度进行向上取整
+    const power = Math.pow(10, order - 1);
+    const result = Math.ceil(absVal / power) * power;
+    return val < 0 ? -result : result;
+}
+
 // y轴上下限计算函数
 export const calcYAxisMax = (value: { max: number, min: number }) => {
     const maxAbs = Math.max(Math.abs(value.max), Math.abs(value.min));
-    return parseFloat((maxAbs * 1.2).toFixed(2));
+    return getNiceValue(maxAbs * 1.2);
 }
 
 export const calcYAxisMin = (value: { max: number, min: number }, arr: Array<number | null>) => {
@@ -42,9 +54,8 @@ export const calcYAxisMin = (value: { max: number, min: number }, arr: Array<num
     }
 
     const calculatedMin = targetZeroRatio * currentMax / (1 - targetZeroRatio);
-    const result = -parseFloat(calculatedMin.toFixed(2));
-
-    return result;
+    // 同样对最小值进行“整”数化处理
+    return -getNiceValue(calculatedMin);
 }
 
 // 检测时间格式
