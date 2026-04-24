@@ -8,6 +8,8 @@
         v-if="chartOptionsList.length > 0"
         v-model:show-chart-view="showChartView"
         :opts="chartOptionsList"
+        :showTable="true"
+        table-position="bottom"
         :titles="chartTitles"
         :height="250"
         :table-max-height="500"
@@ -49,7 +51,6 @@ const socRaw = [20, 22, 25, 28, 30, 32, 35, 40, 45, 48, 50, 50, 50, 52, 55, 55, 
 const chartOptions1 = ref({
   title: '储能运行监测',
   timeList,
-  showTable: true,
   boundaryGap: false,
   tooltipShow: false,
   tooltipTrigger: 'axis',
@@ -107,7 +108,6 @@ const chartOptions1 = ref({
 const chartOptions2 = ref({
   title: '电价信息',
   timeList,
-  showTable: true,
   boundaryGap: false,
   tooltipShow: false,
   tooltipTrigger: 'axis',
@@ -138,7 +138,6 @@ const chartOptions2 = ref({
 const chartOptions3 = ref({
   title: '光伏功率',
   timeList,
-  showTable: true,
   boundaryGap: false,
   tooltipShow: false,
   tooltipTrigger: 'axis',
@@ -167,7 +166,6 @@ const chartOptions3 = ref({
 const chartOptions4 = ref({
   title: '负荷功率',
   timeList,
-  showTable: true,
   boundaryGap: false,
   tooltipShow: false,
   tooltipTrigger: 'axis',

@@ -4,7 +4,7 @@
       <div class="switch-row-left">
         <slot name="header" />
       </div>
-      <div class="chart-table-switch">
+      <div v-if="showSwitchToggle" class="chart-table-switch">
         <span
           class="switch-btn"
           :class="{ active: displayChart }"
@@ -17,7 +17,7 @@
         >表</span>
       </div>
     </div>
-    <div v-show="displayChart" class="chart-content">
+    <div v-show="shouldShowChartContent" class="chart-content">
       <div ref="containerRef" class="linked-chart-container">
         <template v-if="chartList.length > 0">
           <div v-for="(opt, index) in chartList" :key="getChartItemKey(opt, index)" class="chart-item-wrap">
@@ -31,11 +31,14 @@
         </template>
       </div>
     </div>
-      <div v-show="!displayChart" class="table-content">
+    <div v-if="canShowTable" v-show="shouldShowTableContent" class="table-content">
       <n-data-table
         :columns="dataTableColumns"
         :data="tableRows"
         :max-height="tableMaxHeight"
+        :virtual-scroll="enableTableVirtualScroll"
+        :min-row-height="TABLE_MIN_ROW_HEIGHT"
+        :row-key="getTableRowKey"
         :scroll-x="TABLE_SCROLL_X"
         striped
         :bordered="true"
@@ -79,7 +82,6 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } fr
 import * as eCharts from 'echarts'
 import { debounce } from 'lodash-es'
 import type { ChartOptions, ChartSeriesData } from '@/components/lineEcharts/types'
-import { useChartTable } from '@/components/lineEcharts/useChartTable'
 import { escapeHtml } from '@/components/lineEcharts/utils'
 import { useLinkedChartOption, DEFAULT_CHART_COLORS } from './useLinkedChartOption'
 
@@ -89,6 +91,10 @@ const DEBOUNCE_UPDATE_MS = 50
 const TOOLTIP_OFFSET_PX = 16
 /** 表格横向滚动宽度（px） */
 const TABLE_SCROLL_X = 1200
+/** 超过该行数后启用虚拟滚动，避免大表格整体渲染卡顿 */
+const TABLE_VIRTUAL_SCROLL_THRESHOLD = 100
+/** Naive UI 虚拟滚动最小行高（px） */
+const TABLE_MIN_ROW_HEIGHT = 39
 interface Props {
   /** 单图配置（与 opts 二选一） */
   opt?: ChartOptions
@@ -98,6 +104,10 @@ interface Props {
   titles?: string[]
   height: number
   groupId?: string
+  /** 是否展示图/表切换与表格；联动图推荐通过组件级 props 统一控制 */
+  showTable?: boolean
+  /** 表格位置：switch 为图/表切换，bottom 为直接展示在最后一张图下方 */
+  tablePosition?: 'switch' | 'bottom'
   showChartView?: boolean
   /** 表格最大高度（px） */
   tableMaxHeight?: number
@@ -107,19 +117,35 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   groupId: '',
+  tablePosition: 'switch',
   tableMaxHeight: 500,
   unifiedTooltip: true
 })
-
-const displayChart = computed(() =>
-  props.showChartView !== undefined ? props.showChartView : showValue.value
-)
 
 const chartList = computed(() => {
   if (props.opts?.length) return props.opts
   if (props.opt && Object.keys(props.opt).length > 0) return [props.opt]
   return []
 })
+
+const showValue = shallowRef(true)
+const canShowTable = computed(() =>
+  props.showTable ?? chartList.value.some((item) => item?.showTable === true)
+)
+const isBottomTableMode = computed(() => props.tablePosition === 'bottom')
+const showSwitchToggle = computed(() => canShowTable.value && !isBottomTableMode.value)
+
+const displayChart = computed(() =>
+  !canShowTable.value || isBottomTableMode.value
+    ? true
+    : (props.showChartView !== undefined ? props.showChartView : showValue.value)
+)
+const shouldShowChartContent = computed(() =>
+  displayChart.value
+)
+const shouldShowTableContent = computed(() =>
+  canShowTable.value && (isBottomTableMode.value || !displayChart.value)
+)
 
 function getChartTitle(index: number): string {
   if (props.titles && props.titles[index] !== undefined) return props.titles[index]
@@ -183,11 +209,20 @@ const dataTableColumns = computed(() => {
   ]
 })
 
+interface TableRow {
+  __rowKey: string
+  时间: string | number
+  [key: string]: string | number
+}
+
 const tableRows = computed(() => {
   const { timeList = [], series = [] } = chartTableSwitchTableData.value
   if (!timeList.length) return []
   return timeList.map((t, i) => {
-    const row: Record<string, string | number> = { 时间: t }
+    const row: TableRow = {
+      __rowKey: `${String(t)}-${i}`,
+      时间: t
+    }
     series.forEach((s) => {
       const val = s.data && s.data[i]
       row[s.name] = val != null ? val : '--'
@@ -196,7 +231,16 @@ const tableRows = computed(() => {
   })
 })
 
+const enableTableVirtualScroll = computed(() =>
+  tableRows.value.length >= TABLE_VIRTUAL_SCROLL_THRESHOLD
+)
+
+function getTableRowKey(row: TableRow) {
+  return row.__rowKey
+}
+
 function setChartView(value: boolean) {
+  if (!canShowTable.value || isBottomTableMode.value) return
   if (props.showChartView !== undefined) {
     emit('update:showChartView', value)
   } else {
@@ -218,7 +262,6 @@ function setBoxRef(el: HTMLDivElement | null, index: number) {
 const myCharts = shallowRef<(eCharts.ECharts | null)[]>([])
 const height = ref(props.height)
 
-const { showTable, showValue, calculateTableData } = useChartTable()
 const { updateChartOption, bindLegendSelectChanged } = useLinkedChartOption()
 
 // --- 统一 Tooltip 逻辑 ---
@@ -443,11 +486,6 @@ function initCharts() {
         bindLegendSelectChanged(chart, () => chartList.value[i])
       }
 
-      // 如果是单图且配置了显示表格，初始化表格数据
-      if (list.length === 1 && item.showTable !== undefined) {
-        showTable.value = item.showTable
-        if (showTable.value) calculateTableData(item)
-      }
     } catch (e) {
       console.error('Failed to init chart', i, e)
       instances[i] = null
@@ -466,18 +504,23 @@ function initCharts() {
 
   myCharts.value = instances
   
-  // 绑定统一 Tooltip 事件与联动
+  // 绑定统一 Tooltip 事件
   if (props.unifiedTooltip) {
     nextTick(() => {
       bindUnifiedTooltipEvents()
-      if (instances.length <= 1) return
-      const validCharts = instances.filter(Boolean) as eCharts.ECharts[]
-      if (props.groupId) {
-        eCharts.connect(props.groupId)
-      } else {
-        connectedGroupIdRef.value = eCharts.connect(validCharts)
-      }
     })
+  }
+
+  // 多图联动不应依赖 unifiedTooltip 开关。
+  if (instances.length <= 1) return
+
+  const validCharts = instances.filter(Boolean) as eCharts.ECharts[]
+  if (validCharts.length <= 1) return
+
+  if (props.groupId) {
+    eCharts.connect(props.groupId)
+  } else {
+    connectedGroupIdRef.value = eCharts.connect(validCharts)
   }
 }
 
@@ -592,11 +635,6 @@ const debouncedUpdate = debounce(() => {
       bindUnifiedTooltipEvents()
   }
 
-  // 如果是单图，更新表格数据
-  if (list.length === 1 && Object.keys(list[0]).length > 0) {
-     calculateTableData(list[0])
-  }
-  
   nextTick(resizeHandler)
 }, DEBOUNCE_UPDATE_MS)
 

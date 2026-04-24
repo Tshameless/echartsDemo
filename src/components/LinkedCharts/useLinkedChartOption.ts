@@ -91,6 +91,10 @@ export const useLinkedChartOption = () => {
   }
 
   const getCommonOption = (item: ChartOptions, extra = {}) => ({
+    // 联动缩放时关闭更新动画，避免当前操作图与其它图之间出现“追赶式”延迟。
+    animation: false,
+    animationDurationUpdate: 0,
+    animationEasingUpdate: 'linear',
     tooltip: {
       show: item.tooltipShow ?? true,
       trigger: item.tooltipTrigger ?? 'axis',
