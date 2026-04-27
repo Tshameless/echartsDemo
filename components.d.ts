@@ -26,6 +26,7 @@ declare module 'vue' {
     LinkedEchartsToolbar: typeof import('./src/components/LinkedEcharts/LinkedEchartsToolbar.vue')['default']
     LinkedEchartsUnifiedTooltip: typeof import('./src/components/LinkedEcharts/LinkedEchartsUnifiedTooltip.vue')['default']
     NDataTable: typeof import('naive-ui')['NDataTable']
+    NDatePicker: typeof import('naive-ui')['NDatePicker']
     NSwitch: typeof import('naive-ui')['NSwitch']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

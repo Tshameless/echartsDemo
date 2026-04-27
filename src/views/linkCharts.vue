@@ -9,7 +9,7 @@
         <template #header>
           <div class="date-picker-group">
             <span class="date-label">日期：</span>
-            <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" style="width: 320px"
+            <n-date-picker v-model="selectedDate" type="date" placeholder="选择日期" style="width: 320px"
               value-format="YYYY-MM-DD" @change="handleDateChange" />
           </div>
         </template>
