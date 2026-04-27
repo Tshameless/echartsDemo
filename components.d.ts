@@ -29,5 +29,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     ThreeJSMap: typeof import('./src/components/ThreeJSMap/index.vue')['default']
+    Toolbar: typeof import('./src/components/LinkedCharts/components/Toolbar.vue')['default']
+    UnifiedTooltipRenderer: typeof import('./src/components/LinkedCharts/components/UnifiedTooltipRenderer.vue')['default']
   }
 }
