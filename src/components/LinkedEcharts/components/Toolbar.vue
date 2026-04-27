@@ -15,18 +15,22 @@ const emit = defineEmits<{
   <div class="switch-row">
     <div class="switch-row-left">
       <slot name="header" />
+      <slot name="header-left" />
     </div>
-    <div v-if="showSwitchToggle" class="chart-table-switch">
-      <span
-        class="switch-btn"
-        :class="{ active: displayChart }"
-        @click="emit('update:displayChart', true)"
-      >{{ chartLabel || '图' }}</span>
-      <span
-        class="switch-btn"
-        :class="{ active: !displayChart }"
-        @click="emit('update:displayChart', false)"
-      >{{ tableLabel || '表' }}</span>
+    <div class="switch-row-right">
+      <slot name="header-right" />
+      <div v-if="showSwitchToggle" class="chart-table-switch">
+        <span
+          class="switch-btn"
+          :class="{ active: displayChart }"
+          @click="emit('update:displayChart', true)"
+        >{{ chartLabel || '图' }}</span>
+        <span
+          class="switch-btn"
+          :class="{ active: !displayChart }"
+          @click="emit('update:displayChart', false)"
+        >{{ tableLabel || '表' }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -43,6 +47,16 @@ const emit = defineEmits<{
 .switch-row-left {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.switch-row-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .chart-table-switch {
@@ -50,7 +64,6 @@ const emit = defineEmits<{
   border: 1px solid #dcdfe6;
   border-radius: 4px;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .switch-btn {

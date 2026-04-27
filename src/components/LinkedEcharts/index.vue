@@ -84,6 +84,12 @@ defineExpose({
       <template #header>
         <slot name="header" />
       </template>
+      <template #header-left>
+        <slot name="header-left" />
+      </template>
+      <template #header-right>
+        <slot name="header-right" />
+      </template>
     </Toolbar>
 
     <!-- Charts Section -->
@@ -93,7 +99,17 @@ defineExpose({
         :height="props.height"
         @set-container-ref="el => { containerRef = el }"
         @set-box-ref="(el, idx) => { boxRefs[idx] = el! }"
-      />
+      >
+        <template #chart-header-left="slotProps">
+          <slot name="chart-header-left" v-bind="slotProps" />
+        </template>
+        <template #chart-header-right="slotProps">
+          <slot name="chart-header-right" v-bind="slotProps" />
+        </template>
+        <template #chart-footer="slotProps">
+          <slot name="chart-footer" v-bind="slotProps" />
+        </template>
+      </ChartRenderer>
     </div>
 
     <!-- Table Section -->
@@ -107,6 +123,11 @@ defineExpose({
         :get-table-row-key="getTableRowKey"
         :table-scroll-x="props.tableScrollX || 1200"
       />
+    </div>
+
+    <!-- Footer Slot -->
+    <div class="linked-echarts-footer">
+      <slot name="footer" />
     </div>
 
     <!-- Unified Tooltip -->
@@ -124,5 +145,9 @@ defineExpose({
 <style scoped>
 .chart-table-switch-wrapper {
   width: 100%;
+}
+
+.linked-echarts-footer {
+  margin-top: 8px;
 }
 </style>

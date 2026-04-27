@@ -9,8 +9,22 @@
         <template #header>
           <div class="date-picker-group">
             <span class="date-label">日期：</span>
-            <n-date-picker v-model="selectedDate" type="date" placeholder="选择日期" style="width: 320px"
-              value-format="YYYY-MM-DD" @change="handleDateChange" />
+            <n-date-picker v-model:formatted-value="selectedDate" value-format="yyyy-MM-dd" type="date" placeholder="选择日期" style="width: 200px" @update:value="handleDateChange" />
+          </div>
+        </template>
+        <template #chart-header-left="{ index }">
+          <n-tag type="info" size="tiny" :bordered="false" v-if="index === 0">实时监控</n-tag>
+          <n-tag type="warning" size="tiny" :bordered="false" v-else-if="index === 1">预测分析</n-tag>
+          <n-tag size="tiny" :bordered="false" v-else>辅助数据</n-tag>
+        </template>
+        <template #chart-header-right="{ item }">
+          <n-button size="tiny" quaternary type="primary">配置</n-button>
+        </template>
+        <template #chart-footer="{ item }">
+          <div class="per-chart-footer">
+            <n-text depth="3" style="font-size: 11px;">
+              {{ item.title }} 数据更新于: {{ new Date().toLocaleTimeString() }}
+            </n-text>
           </div>
         </template>
       </LinkedEcharts>
@@ -228,5 +242,10 @@ const handleDateChange = (value) => {
 .date-label {
   font-size: 14px;
   color: #606266;
+}
+
+.per-chart-footer {
+  margin-top: 4px;
+  text-align: left;
 }
 </style>
