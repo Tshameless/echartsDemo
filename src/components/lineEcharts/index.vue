@@ -57,8 +57,8 @@ const { processedOpt } = useProcessedData(opt)
 // 2. 逻辑抽离：ECharts Option 生成逻辑
 const { getFinalOption } = useChartOption()
 
-// 3. 逻辑抽离：表格逻辑
-const { showTable, tableData, tableHeader, isChartView, calculateTableData } = useChartTable()
+// 3. 逻辑抽离：表格逻辑 (直接传入配置引用)
+const { showTable, tableData, tableHeader, isChartView } = useChartTable(processedOpt)
 
 /** 图例选中状态映射 */
 const selectedLegends = ref<Record<string, boolean>>({})
@@ -75,24 +75,6 @@ const finalOption = computed(() => {
 const handleLegendChange = (params: any) => {
     selectedLegends.value = params.selected
 }
-
-/** 
- * 监听配置同步
- * 确保外部 props 变化时，内部状态（如显示开关）能实时同步
- */
-watchEffect(() => {
-    if (props.opt.showTable !== undefined) {
-        showTable.value = props.opt.showTable
-    }
-})
-
-/** 
- * 数据变更副作用
- * 当核心数据变化时，同步触发表格数据的计算逻辑
- */
-watch(() => [processedOpt.value.series, processedOpt.value.timeList], () => {
-    calculateTableData(processedOpt.value)
-}, { deep: true, immediate: true })
 
 // 暴露 API
 defineExpose({

@@ -33,7 +33,6 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue"
 import lineECharts from "../components/lineEcharts/index.vue"
-// 导入中心图标图片资源
 import usePowerIcon from '../assets/img/usePowerIcon.png';
 import dayjs from "dayjs"
 
@@ -48,6 +47,7 @@ let resizeObserver = null
 const powerConsumptionOpt = ref<any>({})
 
 const chartRef = ref()
+
 const getDonutOption = (colors: string[], data: any[], icon: any, unit: string = '(kWh)') => {
   const total = data[0].value;
   const part = data[1].value;
@@ -70,7 +70,6 @@ const getDonutOption = (colors: string[], data: any[], icon: any, unit: string =
             color: '#70757f',
             width: 120,
             fontSize: '14px',
-
           },
           value: {
             color: '#272f3b',
@@ -101,7 +100,6 @@ const getDonutOption = (colors: string[], data: any[], icon: any, unit: string =
     yAxis: [],
     dataZoom: [],
     series: [
-      // 内层：占比部分 (b)
       {
         name: '',
         type: 'pie',
@@ -131,7 +129,6 @@ const getDonutOption = (colors: string[], data: any[], icon: any, unit: string =
           }
         ]
       },
-      // 外层：总量部分 (a)
       {
         name: '',
         type: 'pie',
@@ -162,7 +159,6 @@ const getDonutOption = (colors: string[], data: any[], icon: any, unit: string =
         left: '28%',
         top: 'center',
         style: {
-          // 使用传入的 icon 资源（即 usePowerIcon）
           image: icon,
           width: 32,
           height: 32
@@ -171,9 +167,10 @@ const getDonutOption = (colors: string[], data: any[], icon: any, unit: string =
     ]
   }
 }
+
 onMounted(() => {
   nextTick(() => {
-    // 修改 eChartsDataSpecial 为热力图配置
+    // 热力图配置
     eChartsDataSpecial.value = {
       title: {
         text: '1月份热力图',
@@ -181,6 +178,12 @@ onMounted(() => {
       },
       tooltip: {
         position: 'top'
+      },
+      grid: {
+        left: '10%',
+        right: '10%',
+        top: '15%',
+        bottom: '20%'
       },
       xAxis: {
         type: 'category',
@@ -215,7 +218,7 @@ onMounted(() => {
           Array.from({ length: 24 }, (_, hour) => [
             day,
             hour,
-            Math.floor(Math.random() * 100) // 随机生成0-100的热力值
+            Math.floor(Math.random() * 100)
           ])
         ).flat(),
         label: {
@@ -229,9 +232,10 @@ onMounted(() => {
         }
       }]
     };
+
+    // 修复：确保 timeList 和 data 长度一致
     eChartsData.value = {
       title: '时间',
-      // timeList: Array.from(Array(25).keys()).map(n => n),
       timeList: [1, 2, 3],
       showTable: true,
       legendLocation: 'center',
@@ -253,41 +257,38 @@ onMounted(() => {
           type: "line",
           step: "end",
           tableUnit: '(MW)',
-          // data: Array.from(Array(24).keys()).map(n => n + 1).map(n => n * 10),
           data: [1, 2, 3]
-
         },
         {
           name: "实时负荷",
           type: "bar",
           barWidth: "10",
           tableUnit: '(MW)',
-          // data: Array.from(Array(24).keys()).map(n => n + 1).map(n => n * 7),
-          data: []
-
+          data: [1, 2, 3]
         },
       ]
     }
+
+    // 双 Y 轴配置
     eChartsData2.value = {
       title: '时间',
-      timeList: Array.from(Array(24).keys()).map(n => n),
+      timeList: Array.from({ length: 24 }, (_, n) => n),
       showTable: true,
       boundaryGap: true,
       doubleY: true,
       dataZoomShow: true,
       xName: '时间',
       deleteFirstPoint: true,
+      compensateType: 'end',
       yName: 'MW',
       yName1: '元/MWh',
-      compensateType: 'end',
       series: [
         {
           name: "负荷设备功率",
           type: "line",
           step: "end",
-          // symbol: 'none',//为什么和这个有关
           tableUnit: '(MW)',
-          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
+          data: Array.from({ length: 24 }, (_, n) => n + 1).map(n => {
             if (n % 2 == 0) {
               return n * (-1)
             } else {
@@ -299,10 +300,9 @@ onMounted(() => {
         {
           name: "实时负荷",
           type: "line",
-          barWidth: "10",
           tableUnit: '(元/MWh)',
           step: "end",
-          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
+          data: Array.from({ length: 24 }, (_, n) => n + 1).map(n => {
             if (n % 2 == 0) {
               return n * (-2)
             } else {
@@ -313,10 +313,11 @@ onMounted(() => {
         },
       ]
     }
-    const currentIndex = ref(12)
+
+    // 修复：xAlignValue 应该是布尔值，visualMap 配置优化
+    const currentIndex = 12
     eChartsData3.value = {
       title: '时间',
-      // timeList: Array.from(Array(24).keys()).map(n => dayjs().add(n, 'hours').format('HH:mm')),
       timeList: Array.from({ length: 24 }, (_, index) =>
         dayjs().startOf('day').add(index, 'hour').format('HH:mm')
       ),
@@ -325,24 +326,23 @@ onMounted(() => {
       boundaryGap: true,
       doubleY: true,
       dataZoomShow: true,
-      xAlignValue: 'center',
+      xAlignValue: true,
       xName: '时间',
-      // deleteLastPoint: true,
+      compensateType: 'end',
       yName: 'MW',
       yName1: '元/MWh',
-      compensateType: 'end',
-      visualMap: currentIndex.value != -1 ? [
+      visualMap: currentIndex !== -1 ? [
         {
           show: false,
           dimension: 0,
           seriesIndex: 0,
           pieces: [
             {
-              lte: currentIndex.value,
+              lte: currentIndex,
               color: 'red'
             },
             {
-              gt: currentIndex.value,
+              gt: currentIndex,
               lte: 1500,
               color: 'gray'
             }
@@ -350,15 +350,15 @@ onMounted(() => {
         },
         {
           show: false,
-          dimension: 0,//列索引
+          dimension: 0,
           seriesIndex: 1,
           pieces: [
             {
-              lte: currentIndex.value,
+              lte: currentIndex,
               color: 'yellow'
             },
             {
-              gt: currentIndex.value,
+              gt: currentIndex,
               lte: 1500,
               color: 'gray'
             }
@@ -372,9 +372,9 @@ onMounted(() => {
           step: "end",
           symbol: 'none',
           tableUnit: '(MW)',
-          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
+          data: Array.from({ length: 24 }, (_, n) => n + 1).map(n => {
             if (n % 2 == 0) {
-              return n * (1.2)
+              return n * 1.2
             } else {
               return n * 5
             }
@@ -386,137 +386,119 @@ onMounted(() => {
           type: "line",
           step: 'end',
           tableUnit: '(元/MWh)',
-          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
+          data: Array.from({ length: 24 }, (_, n) => n + 1).map(n => {
             return n * 5
           }),
           yAxisIndex: 1
         },
       ]
     }
+
+    // 修复：分类数据与数值数据长度不匹配的问题
     eChartsData4.value = {
-      title: '时间',
+      title: '设备状态分布',
       timeList: ['运行', '离线', '故障', '报警', '无信息'],
       showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
-      dataZoomShow: true,
-      xName: '时间',
-      deleteLastPoint: true,
-      xAlignValue: 'center',
+      dataZoomShow: false,
+      xName: '状态',
+      deleteLastPoint: false,
+      xAlignValue: false,
       doubleY: true,
-      yName: '把',
-      yName1: '元/MWh',
+      yName: '数量',
+      yName1: '百分比',
       tooltipFormatter: function (params: any) {
         return params.map((param: any) => {
+          const safeName = String(param.axisValueLabel).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          const safeValue = param.data != null ? String(param.data).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '--'
+          const unit = param.componentIndex == 0 ? '个' : '%'
           return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff">
                     <div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>
-                    ${param.axisValueLabel}：${param.data != null ? param.data : '--'}${param.componentIndex == 0 ? '把' : '元/MWh'}
+                    ${safeName}：${safeValue}${unit}
                   </div>`;
         }).join('<br>');
       },
       series: [
         {
-          name: "负荷设备功率",
-          type: "line",
-          step: "end",
-          symbol: 'none',
-          tableUnit: '(MW)',
-          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
-            if (n % 2 == 0) {
-              return n * (-1)
-            } else {
-              return n * -2
-            }
-          }),
+          name: "设备数量",
+          type: "bar",
+          tableUnit: '(个)',
+          data: [15, 3, 2, 5, 1],
           yAxisIndex: 0
         },
         {
-          name: "设备状态",
+          name: "占比",
           type: "line",
-          step: "end",
-          symbol: 'none',
-          tableUnit: '(MW)',
-          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
-            if (n % 2 == 0) {
-              return n * (-2)
-            } else {
-              return n * 2
-            }
-          }),
+          symbol: 'circle',
+          tableUnit: '(%)',
+          data: [57.7, 11.5, 7.7, 19.2, 3.8],
           yAxisIndex: 1
         },
       ]
     }
+
     eChartsData5.value = {
-      title: '时间',
+      title: '告警趋势',
       timeList: ['运行', '离线', '故障', '报警', '无信息'],
       showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
-      dataZoomShow: true,
-      xName: '时间',
-      deleteLastPoint: true,
-      xAlignValue: 'center',
+      dataZoomShow: false,
+      xName: '状态',
+      deleteLastPoint: false,
+      xAlignValue: false,
       doubleY: true,
-      yName: '把',
-      yName1: '元/MWh',
+      yName: '计数',
+      yName1: '比率',
       tooltipFormatter: function (params: any) {
         return params.map((param: any) => {
+          const safeName = String(param.axisValueLabel).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          const safeValue = param.data != null ? String(param.data).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '--'
+          const unit = param.componentIndex == 0 ? '次' : '‰'
           return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff">
                     <div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>
-                    ${param.axisValueLabel}：${param.data != null ? param.data : '--'}${param.componentIndex == 0 ? '把' : '元/MWh'}
+                    ${safeName}：${safeValue}${unit}
                   </div>`;
         }).join('<br>');
       },
       series: [
         {
-          name: "负荷设备功率",
-          type: "line",
-          step: "end",
-          symbol: 'none',
-          tableUnit: '(MW)',
-          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
-            if (n % 2 == 0) {
-              return n * (-1)
-            } else {
-              return n * -2
-            }
-          }),
+          name: "发生次数",
+          type: "bar",
+          tableUnit: '(次)',
+          barWidth: '10px',
+          data: [120, 8, 5, 25, 3],
           yAxisIndex: 0
         },
         {
-          name: "设备状态",
+          name: "发生率",
           type: "line",
-          step: "end",
-          symbol: 'none',
-          tableUnit: '(MW)',
-          data: Array.from(Array(24).keys()).map(n => n + 1).map(n => {
-            if (n % 2 == 0) {
-              return n * (-0.2)
-            } else {
-              return n * 0.1
-            }
-          }),
+          symbol: 'diamond',
+          tableUnit: '(‰)',
+          data: [4.6, 0.3, 0.2, 1.0, 0.1],
           yAxisIndex: 1
         },
       ]
     }
+
+    // SOC 和功率监控
     eleEchartsData.value = {
       showTable: true,
-      title: '时间',
+      title: '储能系统监控',
       doubleY: true,
       legendLocation: 'center',
       legendTop: '5%',
-      timeList: Array.from({ length: 50 }, (_, i: number) => i + 1) || [],
+      timeList: Array.from({ length: 50 }, (_, i: number) => i + 1),
       dataZoomShow: true,
-      xName: '时间',
-      yName: 'kW',
-      yName1: '%',
+      xName: '时间点',
+      yName: '功率(kW)',
+      yName1: 'SOC(%)',
       xAlignValue: true,
       series: [
         {
           name: '运行功率',
-          data: Array.from({ length: 50 }, (_, i) => (Math.random() * 2000 - 1200).toFixed(0)),
+          data: Array.from({ length: 50 }, (_, i) => Number((Math.random() * 2000 - 1200).toFixed(0))),
           tableUnit: '(kW)',
           type: 'line',
           smooth: true,
@@ -524,16 +506,16 @@ onMounted(() => {
         },
         {
           name: 'SOC',
-          data: Array.from({ length: 50 }, (_, i) => ((Math.random() * 100)).toFixed(0)),
-          tableUnit: '(MWh)',
+          data: Array.from({ length: 50 }, (_, i) => Number((Math.random() * 100).toFixed(0))),
+          tableUnit: '(%)',
           type: 'line',
           smooth: true,
           yAxisIndex: 1,
         }
       ]
-
     }
   })
+
   nextTick(() => {
     const mainContent = document.getElementById('home-root')
     if (mainContent) {
@@ -543,9 +525,15 @@ onMounted(() => {
       resizeObserver.observe(mainContent)
     }
   })
-  // 初始化用电量环形图，传入图标资源
-  powerConsumptionOpt.value = getDonutOption(['#5A7FFF', '#42C090'], [{ value: 100, name: '电网供电量：' }, { value: 35, name: '光伏发电量：' }], usePowerIcon)
 
+  powerConsumptionOpt.value = getDonutOption(
+    ['#5A7FFF', '#42C090'], 
+    [
+      { value: 100, name: '电网供电量：' }, 
+      { value: 35, name: '光伏发电量：' }
+    ], 
+    usePowerIcon
+  )
 })
 </script>
 <style>

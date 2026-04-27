@@ -3,8 +3,18 @@ import { defaultTooltipFormatter, calcYAxisMax, calcYAxisMin } from './utils'
 import type { ChartOptions, ChartSeriesData } from './types'
 
 // 默认色板
-const DEFAULT_COLORS = ['red', '#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
-
+const DEFAULT_COLORS = [
+  '#52B3D9', // 清透浅蓝
+  '#48C9B0', // 薄荷青绿
+  '#78C679', // 嫩草绿
+  '#F7C843', // 奶黄
+  '#F39C12', // 浅橘橙
+  '#E77471', // 豆沙粉
+  '#BB8FCE', // 香芋紫
+  '#5D87E1', // 雾霾蓝
+  '#26C6DA', // 青碧色
+  '#80CBC4'  // 冷调浅绿
+]
 export const useChartOption = () => {
 
     /** 获取数值序列值 */
@@ -30,72 +40,80 @@ export const useChartOption = () => {
         return { axis0Data, axis1Data }
     }
 
-    /** 生成单个 Y 轴配置 */
+    /** 
+     * 生成单个 Y 轴配置 
+     * 改进点：使用参数化映射，减少 if/else 分支
+     */
     const createYAxisConfig = (opt: ChartOptions, index: number, otherAxisData: number[] = []): YAXisComponentOption => {
         const isSecondary = index === 1
-        const prefix = isSecondary ? '1' : ''
         
-        // 映射属性 (支持原来的扁平化属性名)
-        const show = isSecondary ? opt.showYAxis1 : opt.showYAxis
-        const name = isSecondary ? opt.yName1 : opt.yName
-        const type = isSecondary ? opt.yType1 : opt.yType
-        const color = isSecondary ? opt.yColor1 : opt.yColor
-        const fontSize = isSecondary ? opt.yFontSize1 : opt.yFontSize
-        const fontWeight = isSecondary ? opt.yFontWeight1 : opt.yFontWeight
-        const formatter = isSecondary ? opt.yFormatter1 : opt.yFormatter
-        const axisLabel = isSecondary ? opt.yAxisLabel1 : opt.yAxisLabel
-        const nameGap = isSecondary ? opt.yNameGapOne : opt.yNameGap
+        // 定义属性映射表，支持扁平化的配置项
+        const configMap = {
+            show: isSecondary ? opt.showYAxis1 : opt.showYAxis,
+            name: isSecondary ? opt.yName1 : opt.yName,
+            type: isSecondary ? opt.yType1 : opt.yType,
+            color: isSecondary ? opt.yColor1 : opt.yColor,
+            fontSize: isSecondary ? opt.yFontSize1 : opt.yFontSize,
+            fontWeight: isSecondary ? opt.yFontWeight1 : opt.yFontWeight,
+            formatter: isSecondary ? opt.yFormatter1 : opt.yFormatter,
+            axisLabel: isSecondary ? opt.yAxisLabel1 : opt.yAxisLabel,
+            nameGap: isSecondary ? opt.yNameGapOne : opt.yNameGap,
+        }
+
+        const defaultName = isSecondary ? '元' : 'MW'
+        const defaultColor = '#fff'
 
         return {
-            show: show ?? true,
-            name: name ?? (isSecondary ? '元' : 'MW'),
-            type: type ?? "value",
-            nameGap: nameGap ?? 20,
+            show: configMap.show ?? true,
+            name: configMap.name ?? defaultName,
+            type: configMap.type ?? "value",
+            nameGap: configMap.nameGap ?? 20,
             nameRotate: 0,
-            axisLine: { show: true, lineStyle: { color: color ?? '#fff' } },
-            axisTick: { show: true, lineStyle: { color: color ?? '#fff' } },
-            // 动态对齐逻辑
+            axisLine: { show: true, lineStyle: { color: configMap.color ?? defaultColor } },
+            axisTick: { show: true, lineStyle: { color: configMap.color ?? defaultColor } },
+            // 动态对齐逻辑：根据 xAlignValue 属性计算刻度
             max: opt.xAlignValue ? (val: { min: number; max: number }) => calcYAxisMax(val) : undefined,
             min: opt.xAlignValue ? (val: { min: number; max: number }) => calcYAxisMin(val, otherAxisData) : undefined,
             alignTicks: opt.alignTicks ?? false,
             splitLine: {
                 lineStyle: { type: 'dashed', width: 1, color: 'rgba(223, 223, 223, 0.1)' }
             },
-            axisLabel: axisLabel ?? {
-                color: color ?? "#fff",
-                fontSize: fontSize ?? 12,
-                fontWeight: fontWeight ?? "normal",
-                formatter: formatter,
+            axisLabel: configMap.axisLabel ?? {
+                color: configMap.color ?? defaultColor,
+                fontSize: configMap.fontSize ?? 12,
+                fontWeight: configMap.fontWeight ?? "normal",
+                formatter: configMap.formatter,
             },
-            nameTextStyle: { color: '#fff' }
+            nameTextStyle: { color: defaultColor }
         }
     }
 
     /** 生成最终的 ECharts Option */
     const getFinalOption = (item: ChartOptions, selectedLegends?: Record<string, boolean>): EChartsOption => {
-        // 根据图例选中状态过滤系列
+        // 过滤可见系列以精确计算 Y 轴范围
         const targetSeries = selectedLegends 
-            ? item.series?.filter(s => selectedLegends[s.name] !== false) // ECharts 默认是选中的，所以未在 selected 中的也视为选中
+            ? item.series?.filter(s => selectedLegends[s.name] !== false)
             : item.series
 
         const { axis0Data, axis1Data } = getAxisDataRange(targetSeries)
 
-        // 生成 Y 轴数组
-        const yAxisConfigs: YAXisComponentOption[] = []
-        yAxisConfigs.push(createYAxisConfig(item, 0, axis1Data))
+        // 生成 Y 轴数组（主轴 + 可选副轴）
+        const yAxisConfigs: YAXisComponentOption[] = [
+            createYAxisConfig(item, 0, axis1Data)
+        ]
         if (item.doubleY) {
             yAxisConfigs.push(createYAxisConfig(item, 1, axis0Data))
         }
 
-        // 如果用户显式传入了 yAxis 且不是双轴对齐模式，则优先使用用户的
+        // 如果提供了原生的 yAxis 配置且不是双轴模式，则优先使用原生配置
         const finalYAxis = (item.yAxis && !item.doubleY) ? item.yAxis : yAxisConfigs
 
         return {
             tooltip: item.tooltip ?? {
                 show: item.tooltipShow ?? true,
                 trigger: item.tooltipTrigger ?? 'axis',
-                backgroundColor: item.tooltipBackgroundColor ?? "rgba(0,0,0,.3)",
-                borderColor: item.tooltipBorderColor ?? "rgba(0,0,0,.3)",
+                backgroundColor: item.tooltipBackgroundColor ?? "rgba(0,0,0,.6)",
+                borderColor: item.tooltipBorderColor ?? "rgba(0,0,0,.6)",
                 textStyle: { color: item.tooltipColor ?? "#fff" },
                 formatter: item.tooltipFormatter || ((params: any) => defaultTooltipFormatter(params, item, !!item.doubleY)),
                 axisPointer: { label: { backgroundColor: '#6a7985' } }
@@ -105,15 +123,15 @@ export const useChartOption = () => {
                 left: item.legendLocation ?? 'center',
                 top: item.legendTop ?? 'top',
                 orient: item.legendOrient ?? 'horizontal',
-                itemWidth: item.legendItemWidth ?? 30,
-                itemHeight: item.legendItemHeight ?? 14,
+                itemWidth: item.legendItemWidth ?? 25,
+                itemHeight: item.legendItemHeight ?? 12,
                 textStyle: {
-                    color: item.legendColor ?? '#000',
+                    color: item.legendColor ?? '#eee',
                     fontSize: item.legendFontSize ?? 12,
                     rich: item.legendRich ?? { one: { width: 60, fontSize: 12 } }
                 },
                 formatter: item.legendFormatter ?? ((name: string) => `{one|${name}}`),
-                selected: selectedLegends // 保持图例选中状态同步
+                selected: selectedLegends
             },
             color: item.color ?? DEFAULT_COLORS,
             dataZoom: item.dataZoom ?? [
@@ -123,7 +141,7 @@ export const useChartOption = () => {
                     start: item.dataZoomStart ?? 0,
                     end: item.dataZoomEnd ?? 100,
                     bottom: item.dataZoomBottom ?? 15,
-                    height: item.dataZoomHeight ?? 25,
+                    height: item.dataZoomHeight ?? 20,
                 },
                 { type: "inside", start: item.dataZoomStart ?? 0, end: item.dataZoomEnd ?? 100 }
             ],
@@ -145,7 +163,7 @@ export const useChartOption = () => {
                 nameLocation: item.xNameLocation ?? 'end'
             }],
             yAxis: finalYAxis,
-            series: item.series as any, // 系列数据保持全量，由 ECharts 内部通过 selected 状态处理显示，但我们计算 Y 轴时只看可见的
+            series: item.series as any,
             graphic: item.graphic,
             visualMap: item.visualMap
         }
