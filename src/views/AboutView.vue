@@ -236,7 +236,7 @@ onMounted(() => {
     // 修复：确保 timeList 和 data 长度一致
     eChartsData.value = {
       title: '时间',
-      timeList: [1, 2, 3],
+      timeList: Array.from({ length: 3000 }, (_, i) => i + 1),
       showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
@@ -257,14 +257,14 @@ onMounted(() => {
           type: "line",
           step: "end",
           tableUnit: '(MW)',
-          data: [1, 2, 3]
+          data: Array.from({ length: 3000 }, (_, i) => i + 1)
         },
         {
           name: "实时负荷",
           type: "bar",
           barWidth: "10",
           tableUnit: '(MW)',
-          data: [1, 2, 3]
+          data: Array.from({ length: 3000 }, (_, i) => i + 1)
         },
       ]
     }
@@ -527,11 +527,11 @@ onMounted(() => {
   })
 
   powerConsumptionOpt.value = getDonutOption(
-    ['#5A7FFF', '#42C090'], 
+    ['#5A7FFF', '#42C090'],
     [
-      { value: 100, name: '电网供电量：' }, 
+      { value: 100, name: '电网供电量：' },
       { value: 35, name: '光伏发电量：' }
-    ], 
+    ],
     usePowerIcon
   )
 })

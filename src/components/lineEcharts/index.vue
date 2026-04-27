@@ -8,21 +8,11 @@
 
         <div class="clearfix">
             <!-- 图形渲染器 -->
-            <ChartRenderer 
-                v-show="isChartView"
-                ref="rendererRef"
-                :option="finalOption" 
-                :height="height" 
-                @legend-select-changed="handleLegendChange"
-            />
+            <ChartRenderer v-show="isChartView" ref="rendererRef" :option="finalOption" :height="height"
+                @legend-select-changed="handleLegendChange" />
 
             <!-- 表格渲染器 -->
-            <DataTableRenderer 
-                v-if="!isChartView"
-                :columns="tableHeader"
-                :data="tableData"
-                :height="height"
-            />
+            <DataTableRenderer v-if="!isChartView" :columns="tableHeader" :data="tableData" :height="height" />
         </div>
     </div>
 </template>
@@ -87,12 +77,14 @@ defineExpose({
     position: relative;
     border: 1px solid transparent;
 }
+
 .chart-switch {
     position: absolute;
     right: 20px;
     top: 0px;
     z-index: 9;
 }
+
 .clearfix::after {
     content: "";
     display: table;

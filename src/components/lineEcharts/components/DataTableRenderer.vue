@@ -1,12 +1,9 @@
 <template>
-  <n-data-table 
-    class="chart-table" 
-    :single-line="false" 
-    :columns="columns" 
-    :data="data"
-    :max-height="tableMaxHeight" 
-    striped 
-  />
+  <div class="table-container" style="padding-top: 36px; box-sizing: border-box;">
+    <n-data-table class="chart-table" :single-line="false" :columns="columns" :data="data" 
+      :style="tableMaxHeight ? { height: tableMaxHeight + 'px' } : {}" flex-height
+      :virtual-scroll="true" striped />
+  </div>
 </template>
 
 <script setup lang="ts">
