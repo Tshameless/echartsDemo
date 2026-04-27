@@ -8,6 +8,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ChartRenderer: typeof import('./src/components/lineEcharts/components/ChartRenderer.vue')['default']
+    DataTableRenderer: typeof import('./src/components/lineEcharts/components/DataTableRenderer.vue')['default']
     EchartsMap: typeof import('./src/components/echartsMap.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']

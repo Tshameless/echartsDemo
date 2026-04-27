@@ -4,139 +4,159 @@ import type {
     YAXisComponentOption, 
     DataZoomComponentOption, 
     VisualMapComponentOption,
-    SeriesOption
+    TooltipComponentOption,
+    GridComponentOption,
+    TitleComponentOption,
+    GraphicComponentOption
 } from 'echarts'
 
-// 定义图表系列数据类型
+/** 图表系列数据类型 */
 export interface ChartSeriesData {
-    name: string  //系列名称
-    type: string   //系列类型
-    stack?: string  //堆叠
-    yAxisIndex?: number  //Y轴索引，只有doubleY为true时生效，否则不传这个属性
-    data: Array<number | null | { value: number; name: string }>  //数据
-    rawData?: (number | null)[]  //原始数据，用于表格/统一 Tooltip 等，不传则用 data
-    tableUnit?: string  //表格列单位
+    name: string
+    type: string
+    stack?: string
+    /** Y轴索引，只有 doubleY 为 true 时生效 */
+    yAxisIndex?: number
+    /** 数据点 */
+    data: Array<number | null | { value: number; name: string }>
+    /** 原始数据，用于表格/统一 Tooltip 等 */
+    rawData?: (number | null)[]
+    /** 表格列单位 */
+    tableUnit?: string
     barWidth?: number | string
     smooth?: boolean | number
     radius?: string | (string | number)[]
     center?: (string | number)[]
-    itemStyle?: any // 暂时保持 any，因为 SeriesOption 类型过于宽泛
+    itemStyle?: any
     label?: any
     emphasis?: any
     avoidLabelOverlap?: boolean
 }
 
-export interface AxisLabel {
-    color?: string;
-    fontSize?: number;
-    fontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number;
-    showMinLabel?: boolean;
-    showMaxLabel?: boolean;
-    formatter?: (value: any, index: number) => string;
+/** 坐标轴标签配置 */
+export interface AxisLabelConfig {
+    color?: string
+    fontSize?: number
+    fontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number
+    showMinLabel?: boolean
+    showMaxLabel?: boolean
+    formatter?: (value: any, index: number) => string
 }
 
+/** 表格列定义 */
 export interface TableColumn {
-    title: string;
-    key: string;
+    title: string
+    key: string
 }
 
-//params类型
+/** 图例切换事件参数 */
 export interface LegendSelectChangedEvent {
-    name: string;
-    selected: Record<string, boolean>;
-    type: string;
+    name: string
+    selected: Record<string, boolean>
+    type: string
 }
 
-// 定义图表选项类型
-export interface ChartOptions {
-    doubleY?: boolean //默认为单Y轴，在子组件中赋值为true
-    tooltipShow?: boolean //默认开启提示
-    tooltipTrigger?: 'item' | 'axis' | 'none' //默认为 axis
-    tooltipBackgroundColor?: string //默认提示背景色
-    tooltipBorderColor?: string //默认提示边框色
-    tooltipColor?: string //默认提示文字色
-    tooltipFormatter?: (params: any) => string //默认提示格式化器,对于有特殊需求时，可自定义，如果需要修改组件的统一提示，请修改defaultTooltipFormatter函数
-    legendshowValue?: boolean //默认显示图例
-    legend?: LegendComponentOption //图例配置
-    legendColor?: string //默认图例颜色
-    legendFontSize?: number //默认图例字体大小
-    legendFontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number //默认图例字体粗细
-    legendLocation?: 'left' | 'center' | 'right' | string | number //默认图例水平方向位置
-    legendTop?: string //默认图例距离顶部
-    legendOrient?: 'horizontal' | 'vertical' //默认图例方向
-    legendItemWidth?: number //默认图例项宽度
-    legendItemHeight?: number //默认图例项高度
-    legendRich?: Record<string, any> //默认图例项样式
-    legendFormatter?: (name: string) => string //默认图例格式化器，可以通过在组件中自定义legendFormatter修改，也可以在legendRich统一修改legend样式
-    dataZoom?: DataZoomComponentOption | DataZoomComponentOption[]//默认数据缩放
-    dataZoomShow?: boolean //默认数据缩放不显示
-    dataZoomBottom?: string //默认数据缩放距离顶部
-    dataZoomStart?: number, //默认数据缩放开始
-    dataZoomEnd?: number, //默认数据缩放结束
-    dataZoomHeight?: number //默认数据缩放高度
-    tooltip?: { //默认提示框
-        trigger?: 'item' | 'axis' | 'none' //默认提示框触发方式
-        axisPointer?: { //默认提示框坐标轴指示器
-            type?: 'line' | 'shadow' | 'none' | 'cross' //默认提示框坐标轴指示器类型
-            label?: { backgroundColor: string }
-        }
-        show?: boolean
-        backgroundColor?: string
-        borderColor?: string
-        textStyle?: { color: string }
-        formatter?: string | ((params: any) => string)
-    }
-    grid?: { //默认图表区域
-        top?: string | number //默认图表区域距离顶部
-        left?: string | number //默认图表区域距离左侧
-        right?: string | number //默认图表区域距离右侧
-        bottom?: string | number //默认图表区域距离底部
-        containLabel?: boolean //默认图表区域是否包含标签
-    }
-    xAxis?: XAXisComponentOption | XAXisComponentOption[] //默认X轴
-    showXAxis?: boolean //默认显示X轴
-    xName?: string //默认X轴名称
-    xType?: 'value' | 'category' | 'time' | 'log' //默认X轴类型
-    boundaryGap?: boolean //默认X轴是否间距
-    xAxisLabel?: AxisLabel //默认X轴标签样式，可以修改单个X轴标签的样式，也可以统一修改
-    timeList?: Array<string | number> //默认时间轴
-    xColor?: string //默认X轴标签颜色
-    xUnitColor?: string //默认X轴标签单位
-    xFontSize?: number //默认X轴标签字体大小
-    xFontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number //默认X轴标签字体粗细
-    xNameGap?: number //默认X轴名称距离左侧
-    xNameLocation?: 'start' | 'middle' | 'end' //默认X轴名称位置
-    yAxis?: YAXisComponentOption | YAXisComponentOption[] //默认Y轴
-    alignTicks?: boolean //默认Y轴是否对齐,只有doubleY为true时生效,当这个为true的时候，且要求xAlignValue也为true，那么y轴两侧的数据会不能正确包含数据的上下限
-    xAlignValue?: boolean//当双Y轴时，需要两侧的0轴对齐
-    showYAxis?: boolean //默认显示Y轴
-    yName?: string //默认Y轴名称
-    yType?: 'value' | 'category' | 'time' | 'log' //默认Y轴类型
-    compensateType?: string //补点类型,end:向后补点,start:向前补点,不传就是不补点,如果添加了这个参数进行了补点，且使用了表格，那么有个调用deleteLastPoint或者是deleteFirstPoint来删除首/尾点
-    yAxisLabel?: AxisLabel //默认y轴标签样式，可以修改单个y轴标签的样式，也可以统一修改
-    yColor?: string //默认Y轴标签颜色
-    yUnitColor?: string //默认Y轴标签单位
-    yFontSize?: number //默认Y轴标签字体大小
-    yFontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number //默认Y轴标签字体粗细
-    yFormatter?: (value: any, index: number) => string //默认Y轴格式化器
-    yAccuracy?: number //默认Y轴精度
-    yNameGap?: number //默认Y轴名称距离顶部
-    showYAxis1?: boolean //默认显示Y轴1
-    yName1?: string //默认Y轴1名称
-    yType1?: 'value' | 'category' | 'time' | 'log' //默认Y轴1类型
-    yAxisLabel1?: AxisLabel //默认y轴标签样式，可以修改单个y轴标签的样式，也可以统一修改
-    yColor1?: string //默认Y轴1标签颜色
-    yFontSize1?: number //默认Y轴1标签字体大小
-    yFormatter1?: (value: any, index: number) => string //默认Y轴格式化器
+/** 
+ * 基础样式配置 
+ * 将原本扁平化的样式属性归类，便于管理
+ */
+export interface ChartStyleConfig {
+    /** 双Y轴模式 */
+    doubleY?: boolean
+    /** 主Y轴对齐逻辑开关 */
+    xAlignValue?: boolean
+    /** 是否对齐刻度 */
+    alignTicks?: boolean
+    
+    /** 提示框配置 */
+    tooltipShow?: boolean
+    tooltipTrigger?: 'item' | 'axis' | 'none'
+    tooltipBackgroundColor?: string
+    tooltipBorderColor?: string
+    tooltipColor?: string
+    tooltipFormatter?: (params: any) => string
+
+    /** 图例配置 */
+    legendShow?: boolean
+    legendLocation?: 'left' | 'center' | 'right' | string | number
+    legendTop?: string
+    legendOrient?: 'horizontal' | 'vertical'
+    legendColor?: string
+    legendFontSize?: number
+    legendFontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number
+    legendItemWidth?: number
+    legendItemHeight?: number
+    legendRich?: Record<string, any>
+    legendFormatter?: (name: string) => string
+
+    /** 数据缩放配置 */
+    dataZoomShow?: boolean
+    dataZoomBottom?: string
+    dataZoomStart?: number
+    dataZoomEnd?: number
+    dataZoomHeight?: number
+
+    /** 轴样式 - X轴 */
+    showXAxis?: boolean
+    xName?: string
+    xType?: 'value' | 'category' | 'time' | 'log'
+    boundaryGap?: boolean
+    xColor?: string
+    xUnitColor?: string
+    xFontSize?: number
+    xFontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number
+    xNameGap?: number
+    xNameLocation?: 'start' | 'middle' | 'end'
+    xAxisLabel?: AxisLabelConfig
+
+    /** 轴样式 - Y轴 */
+    showYAxis?: boolean
+    yName?: string
+    yType?: 'value' | 'category' | 'time' | 'log'
+    yColor?: string
+    yFontSize?: number
+    yFontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number
+    yFormatter?: (value: any, index: number) => string
+    yNameGap?: number
+    yAxisLabel?: AxisLabelConfig
+
+    /** 轴样式 - Y轴1 (副轴) */
+    showYAxis1?: boolean
+    yName1?: string
+    yType1?: 'value' | 'category' | 'time' | 'log'
+    yColor1?: string
+    yFontSize1?: number
     yFontWeight1?: 'normal' | 'bold' | 'bolder' | 'lighter' | number
-    yAccuracy1?: number //默认Y轴1精度
-    yNameGapOne?: number //默认Y轴1名称距离顶部
-    series?: Array<ChartSeriesData> //默认数据
-    color?: string[] // 系列色板，不传则用默认色板
-    title?: string //默认图表标题
-    deleteLastPoint?: boolean //删除最后一个数据点
-    deleteFirstPoint?: boolean //删除第一个数据点
-    showTable?: boolean //默认显示表格
+    yFormatter1?: (value: any, index: number) => string
+    yNameGapOne?: number
+    yAxisLabel1?: AxisLabelConfig
+}
+
+/** 完整图表配置 */
+export interface ChartOptions extends ChartStyleConfig {
+    /** 标题 */
+    title?: string
+    /** X轴时间数据 */
+    timeList?: Array<string | number>
+    /** 系列数据 */
+    series?: Array<ChartSeriesData>
+    /** 自定义调色板 */
+    color?: string[]
+    /** 补点类型: 'start' | 'end' */
+    compensateType?: string
+    /** 是否删除首/尾点 */
+    deleteFirstPoint?: boolean
+    deleteLastPoint?: boolean
+    /** 是否显示表格开关 */
+    showTable?: boolean
+    
+    /** ECharts 原生组件覆盖 */
+    legend?: LegendComponentOption
+    tooltip?: TooltipComponentOption
+    grid?: GridComponentOption
+    dataZoom?: DataZoomComponentOption | DataZoomComponentOption[]
+    xAxis?: XAXisComponentOption | XAXisComponentOption[]
+    yAxis?: YAXisComponentOption | YAXisComponentOption[]
     visualMap?: VisualMapComponentOption | VisualMapComponentOption[]
-    graphic?: any // Graphic 类型通常通过 echarts.GraphicComponentOption 定义，但这里保持灵活性
+    graphic?: GraphicComponentOption | GraphicComponentOption[]
 }
