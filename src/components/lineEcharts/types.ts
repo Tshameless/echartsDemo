@@ -1,12 +1,11 @@
-import type { 
-    LegendComponentOption, 
-    XAXisComponentOption, 
-    YAXisComponentOption, 
-    DataZoomComponentOption, 
+import type {
+    LegendComponentOption,
+    XAXisComponentOption,
+    YAXisComponentOption,
+    DataZoomComponentOption,
     VisualMapComponentOption,
     TooltipComponentOption,
     GridComponentOption,
-    TitleComponentOption,
     GraphicComponentOption
 } from 'echarts'
 
@@ -67,7 +66,7 @@ export interface ChartStyleConfig {
     xAlignValue?: boolean
     /** 是否对齐刻度 */
     alignTicks?: boolean
-    
+
     /** 提示框配置 */
     tooltipShow?: boolean
     tooltipTrigger?: 'item' | 'axis' | 'none'
@@ -149,7 +148,7 @@ export interface ChartOptions extends ChartStyleConfig {
     deleteLastPoint?: boolean
     /** 是否显示表格开关 */
     showTable?: boolean
-    
+
     /** ECharts 原生组件覆盖 */
     legend?: LegendComponentOption
     tooltip?: TooltipComponentOption
