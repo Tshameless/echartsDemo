@@ -3,29 +3,14 @@
     <div class="demo-title">LinkedCharts 多图联动演示</div>
 
     <div class="charts-container">
-      <LinkedCharts
-        ref="linkedChartsRef"
-        v-if="chartOptionsList.length > 0"
-        v-model:show-chart-view="showChartView"
-        :opts="chartOptionsList"
-        :showTable="true"
-        table-position="bottom"
-        :titles="chartTitles"
-        :height="250"
-        :table-max-height="500"
-        group-id="storage-monitor"
-      >
+      <LinkedCharts ref="linkedChartsRef" v-if="chartOptionsList.length > 0" v-model:show-chart-view="showChartView"
+        :opts="chartOptionsList" :showTable="true" table-position="bottom" :titles="chartTitles" :height="250"
+        :table-max-height="500" group-id="storage-monitor">
         <template #header>
           <div class="date-picker-group">
             <span class="date-label">日期：</span>
-            <el-date-picker
-              v-model="selectedDate"
-              type="date"
-              placeholder="选择日期"
-              style="width: 320px"
-              value-format="YYYY-MM-DD"
-              @change="handleDateChange"
-            />
+            <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" style="width: 320px"
+              value-format="YYYY-MM-DD" @change="handleDateChange" />
           </div>
         </template>
       </LinkedCharts>
@@ -43,10 +28,10 @@ const showChartView = ref(true)
 const timeList = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
 
 // 储能运行监测：左轴 kW、右轴 % 均用真实值绘图，xAlignValue 下组件会动态计算 min/max 并使两侧 0 对齐
-const storagePowerRaw = [1120, 15, 20, -525, 30, 35, 40, 45, 50, 55, 60, 65, 350.23, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20]
-const storagePlanRaw = [5, 10, 15, 20, 25, 30, 35, 39.65, 40, 38, 35, 32, 30, 28, 25, 22, 20, 18, 15, 12, 10, 8, 6, 5]
-const storageCmdRaw = [5, 10, 15, 20, 25, 30, 35, 39.65, 40, 38, 35, 32, 30, 28, 25, 22, 20, 18, 15, 12, 10, 8, 6, 5]
-const socRaw = [20, 22, 25, 28, 30, 32, 35, 40, 45, 48, 50, 50, 50, 52, 55, 55, 52, 50, 48, 45, 42, 40, 38, 35]
+const storagePowerRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.random() * 300))
+const storagePlanRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.random() * -100))
+const storageCmdRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.random() * 100))
+const socRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.random() * 100))
 
 const chartOptions1 = ref({
   title: '储能运行监测',
