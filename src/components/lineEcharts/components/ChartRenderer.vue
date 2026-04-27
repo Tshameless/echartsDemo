@@ -50,6 +50,14 @@ const initChart = () => {
   chartInstance.value.on('legendselectchanged', (params: any) => {
     emit('legendSelectChanged', params)
   })
+
+  // 处理由于缩放导致的柱状图高亮 (emphasis) 或 tooltip 残留卡住的问题
+  chartInstance.value.on('datazoom', () => {
+    if (chartInstance.value) {
+      chartInstance.value.dispatchAction({ type: 'downplay' })
+      chartInstance.value.dispatchAction({ type: 'hideTip' })
+    }
+  })
 }
 
 // 监听配置变化
