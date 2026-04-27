@@ -49,127 +49,127 @@ const powerConsumptionOpt = ref<any>({})
 
 const chartRef = ref()
 const getDonutOption = (colors: string[], data: any[], icon: any, unit: string = '(kWh)') => {
-    const total = data[0].value;
-    const part = data[1].value;
-    const name1 = data[0].name;
-    const name2 = data[1].name;
-    const mainColor = colors[0];
-    const subColor = colors[1];
-    return {
-        color: colors,
-        legend: {
-            show: true, top: 'center', right: '0%',
-            itemWidth: 8,
-            itemHeight: 8,
-            itemGap: 10,
-            textStyle: {
-                color: '#fff',
-                fontSize: 12,
-                rich: {
-                    name: {
-                        color: '#70757f',
-                        width: 120,
-                        fontSize: '14px',
+  const total = data[0].value;
+  const part = data[1].value;
+  const name1 = data[0].name;
+  const name2 = data[1].name;
+  const mainColor = colors[0];
+  const subColor = colors[1];
+  return {
+    color: colors,
+    legend: {
+      show: true, top: 'center', right: '0%',
+      itemWidth: 8,
+      itemHeight: 8,
+      itemGap: 10,
+      textStyle: {
+        color: '#fff',
+        fontSize: 12,
+        rich: {
+          name: {
+            color: '#70757f',
+            width: 120,
+            fontSize: '14px',
 
-                    },
-                    value: {
-                        color: '#272f3b',
-                        width: 40,
-                        fontSize: '20px',
-                        fontWeight: '700',
-                    },
-                    unit: {
-                        color: '#272f3b',
-                        width: 40,
-                        fontSize: '12px',
-                        fontWeight: '400',
-                    }
-                }
-            },
-            formatter: (name: string) => {
-                if (!name) return '';
-                const item = data.find(v => v.name === name);
-                const val = item ? item.value : '';
-                return `{name|${name}}{value|${val}}{unit|${unit}}`;
-            }
+          },
+          value: {
+            color: '#272f3b',
+            width: 40,
+            fontSize: '20px',
+            fontWeight: '700',
+          },
+          unit: {
+            color: '#272f3b',
+            width: 40,
+            fontSize: '12px',
+            fontWeight: '400',
+          }
+        }
+      },
+      formatter: (name: string) => {
+        if (!name) return '';
+        const item = data.find(v => v.name === name);
+        const val = item ? item.value : '';
+        return `{name|${name}}{value|${val}}{unit|${unit}}`;
+      }
+    },
+    tooltip: {
+      show: true,
+      trigger: 'item',
+    },
+    xAxis: [],
+    yAxis: [],
+    dataZoom: [],
+    series: [
+      // 内层：占比部分 (b)
+      {
+        name: '',
+        type: 'pie',
+        radius: ['54%', '70%'],
+        center: ['30%', '50%'],
+        silent: false,
+        label: { show: false },
+        startAngle: 180,
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10
         },
-        tooltip: {
-            show: true,
-            trigger: 'item',
-        },
-        xAxis: [],
-        yAxis: [],
-        dataZoom: [],
-        series: [
-            // 内层：占比部分 (b)
-            {
-                name: '',
-                type: 'pie',
-                radius: ['54%', '70%'],
-                center: ['30%', '50%'],
-                silent: false,
-                label: { show: false },
-                startAngle: 180,
-                avoidLabelOverlap: false,
-                itemStyle: {
-                    borderRadius: 10
-                },
-                data: [
-                    {
-                        value: part,
-                        name: name2,
-                        itemStyle: {
-                            color: subColor
-                        },
-                        tableUnit: unit
-                    },
-                    {
-                        value: total - part,
-                        name: '',
-                        itemStyle: { color: 'transparent' },
-                        tooltip: { show: false }
-                    }
-                ]
+        data: [
+          {
+            value: part,
+            name: name2,
+            itemStyle: {
+              color: subColor
             },
-            // 外层：总量部分 (a)
-            {
-                name: '',
-                type: 'pie',
-                radius: ['72%', '88%'],
-                center: ['30%', '50%'],
-                label: { show: false },
-                startAngle: 90,
-                avoidLabelOverlap: false,
-                itemStyle: {
-                    borderRadius: 10
-                },
-                data: [
-                    {
-                        value: total,
-                        name: name1,
-                        itemStyle: {
-                            color: mainColor,
-                            opacity: 0.9
-                        },
-                        tableUnit: unit
-                    }
-                ]
-            }
-        ],
-        graphic: [
-            {
-                type: 'image',
-                left: '28%',
-                top: 'center',
-                style: {
-                    // 使用传入的 icon 资源（即 usePowerIcon）
-                    image: icon,
-                    width: 32,
-                    height: 32
-                }
-            }
+            tableUnit: unit
+          },
+          {
+            value: total - part,
+            name: '',
+            itemStyle: { color: 'transparent' },
+            tooltip: { show: false }
+          }
         ]
-    }
+      },
+      // 外层：总量部分 (a)
+      {
+        name: '',
+        type: 'pie',
+        radius: ['72%', '88%'],
+        center: ['30%', '50%'],
+        label: { show: false },
+        startAngle: 90,
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10
+        },
+        data: [
+          {
+            value: total,
+            name: name1,
+            itemStyle: {
+              color: mainColor,
+              opacity: 0.9
+            },
+            tableUnit: unit
+          }
+        ]
+      }
+    ],
+    graphic: [
+      {
+        type: 'image',
+        left: '28%',
+        top: 'center',
+        style: {
+          // 使用传入的 icon 资源（即 usePowerIcon）
+          image: icon,
+          width: 32,
+          height: 32
+        }
+      }
+    ]
+  }
 }
 onMounted(() => {
   nextTick(() => {
@@ -544,7 +544,7 @@ onMounted(() => {
     }
   })
   // 初始化用电量环形图，传入图标资源
-    powerConsumptionOpt.value = getDonutOption(['#5A7FFF', '#42C090'], [{ value: 100, name: '电网供电量：' }, { value: 35, name: '光伏发电量：' }], usePowerIcon)
+  powerConsumptionOpt.value = getDonutOption(['#5A7FFF', '#42C090'], [{ value: 100, name: '电网供电量：' }, { value: 35, name: '光伏发电量：' }], usePowerIcon)
 
 })
 </script>
