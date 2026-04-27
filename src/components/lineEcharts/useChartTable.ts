@@ -5,7 +5,9 @@ export function useChartTable() {
     const showTable = ref(false)
     const tableData = ref<Array<Record<string, any>>>([])
     const tableHeader = ref<TableColumn[]>([])
-    const showValue = ref(true)
+    
+    // 控制显示模式：true 为图表，false 为表格
+    const isChartView = ref(true)
     
     // 标记是否需要刷新数据（当数据变化但表格不可见时标记为 true）
     const needsRefresh = ref(false)
@@ -14,8 +16,8 @@ export function useChartTable() {
     const calculateTableData = (item: ChartOptions, force = false) => {
         lastConfig = item
         
-        // 如果表格不可见且不强制刷新，则只标记，不计算
-        if (showValue.value && !force) {
+        // 如果图表可见且不强制刷新，则只标记，不计算（性能优化）
+        if (isChartView.value && !force) {
             needsRefresh.value = true
             return
         }
@@ -51,8 +53,8 @@ export function useChartTable() {
     }
 
     // 当切换到表格视图时，如果需要刷新则立即执行
-    watch(showValue, (isChart) => {
-        if (!isChart && needsRefresh.value && lastConfig) {
+    watch(isChartView, (chartMode) => {
+        if (!chartMode && needsRefresh.value && lastConfig) {
             calculateTableData(lastConfig, true)
         }
     })
@@ -61,7 +63,7 @@ export function useChartTable() {
         showTable,
         tableData,
         tableHeader,
-        showValue,
+        isChartView,
         calculateTableData
     }
 }

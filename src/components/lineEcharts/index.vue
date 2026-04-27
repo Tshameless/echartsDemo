@@ -1,7 +1,7 @@
 <template>
     <div class="chart-container">
         <!-- 切换开关 -->
-        <n-switch v-model:value="showValue" :round="false" v-if="showTable" class="chart-switch">
+        <n-switch v-model:value="isChartView" :round="false" v-if="showTable" class="chart-switch">
             <template #checked>图形</template>
             <template #unchecked>图表</template>
         </n-switch>
@@ -9,7 +9,7 @@
         <div class="clearfix">
             <!-- 图形渲染器 -->
             <ChartRenderer 
-                v-show="showValue"
+                v-show="isChartView"
                 ref="rendererRef"
                 :option="finalOption" 
                 :height="height" 
@@ -18,7 +18,7 @@
 
             <!-- 表格渲染器 -->
             <DataTableRenderer 
-                v-show="!showValue"
+                v-show="!isChartView"
                 :columns="tableHeader"
                 :data="tableData"
                 :height="height"
@@ -28,8 +28,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, toRefs, onMounted } from 'vue'
-import { debounce } from 'lodash-es'
+import { ref, watch, toRefs, computed, watchEffect } from 'vue'
 import type { ChartOptions } from './types'
 
 // 导入重构后的组件和 Hooks
@@ -52,77 +51,52 @@ const props = withDefaults(defineProps<LineChartProps>(), {
 const { opt } = toRefs(props)
 const rendererRef = ref<InstanceType<typeof ChartRenderer>>()
 
-// 1. 逻辑抽离：补点逻辑处理
+// 1. 逻辑抽离：数据预处理（补点逻辑）
 const { processedOpt } = useProcessedData(opt)
 
 // 2. 逻辑抽离：ECharts Option 生成逻辑
 const { getFinalOption } = useChartOption()
-const finalOption = ref({})
 
-// 3. 逻辑抽离：表格数据处理
-const { showTable, tableData, tableHeader, showValue, calculateTableData } = useChartTable()
+// 3. 逻辑抽离：表格逻辑
+const { showTable, tableData, tableHeader, isChartView, calculateTableData } = useChartTable()
 
-/** 响应图例切换，保持 Y 轴对齐 */
+/** 图例选中状态映射 */
+const selectedLegends = ref<Record<string, boolean>>({})
+
+/** 
+ * 核心配置生成 (Computed)
+ * 声明式地根据原始配置、预处理数据和图例选中状态生成最终 Option
+ */
+const finalOption = computed(() => {
+    return getFinalOption(processedOpt.value, selectedLegends.value)
+})
+
+/** 响应图例切换：仅更新内部选中状态，触发 finalOption 自动重新计算 */
 const handleLegendChange = (params: any) => {
-    const selected = params.selected
-    const currentOpt = processedOpt.value
-    
-    // 过滤出当前选中的系列
-    const filteredSeries = currentOpt.series?.filter(s => selected[s.name])
-    
-    // 重新生成配置（主要是更新 Y 轴范围）
-    finalOption.value = getFinalOption(currentOpt, filteredSeries)
+    selectedLegends.value = params.selected
 }
 
-// 防抖处理配置变化
-const debouncedUpdate = debounce((newVal: ChartOptions) => {
-    if (newVal && Object.keys(newVal).length > 0) {
-        updateAll(newVal)
+/** 
+ * 监听配置同步
+ * 确保外部 props 变化时，内部状态（如显示开关）能实时同步
+ */
+watchEffect(() => {
+    if (props.opt.showTable !== undefined) {
+        showTable.value = props.opt.showTable
     }
-}, 50)
+})
+
+/** 
+ * 数据变更副作用
+ * 当核心数据变化时，同步触发表格数据的计算逻辑
+ */
+watch(() => [processedOpt.value.series, processedOpt.value.timeList], () => {
+    calculateTableData(processedOpt.value)
+}, { deep: true, immediate: true })
 
 // 暴露 API
 defineExpose({
     resize: () => rendererRef.value?.resize()
-})
-
-// 核心更新函数
-const updateAll = (config: ChartOptions, isDataChange = true) => {
-    finalOption.value = getFinalOption(config)
-    
-    // 只要数据变化，就通知表格 Hook（Hook 内部会处理懒加载逻辑）
-    if (isDataChange) {
-        calculateTableData(config)
-    }
-}
-
-// 1. 监听数据核心属性变化（触发全量更新）
-watch(
-    () => [processedOpt.value.series, processedOpt.value.timeList],
-    () => {
-        debouncedUpdate(processedOpt.value)
-    },
-    { deep: true }
-)
-
-// 2. 监听样式类属性变化（仅更新图表配置，不触发表格）
-watch(
-    () => {
-        const { series, timeList, ...rest } = processedOpt.value
-        return rest
-    },
-    () => {
-        finalOption.value = getFinalOption(processedOpt.value)
-    },
-    { deep: true }
-)
-
-// 初始加载
-onMounted(() => {
-    if (props.opt.showTable !== undefined) {
-        showTable.value = props.opt.showTable
-    }
-    updateAll(processedOpt.value)
 })
 </script>
 

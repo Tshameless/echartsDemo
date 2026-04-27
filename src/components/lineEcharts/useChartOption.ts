@@ -72,8 +72,12 @@ export const useChartOption = () => {
     }
 
     /** 生成最终的 ECharts Option */
-    const getFinalOption = (item: ChartOptions, filteredSeries?: ChartSeriesData[]): EChartsOption => {
-        const targetSeries = filteredSeries || item.series
+    const getFinalOption = (item: ChartOptions, selectedLegends?: Record<string, boolean>): EChartsOption => {
+        // 根据图例选中状态过滤系列
+        const targetSeries = selectedLegends 
+            ? item.series?.filter(s => selectedLegends[s.name] !== false) // ECharts 默认是选中的，所以未在 selected 中的也视为选中
+            : item.series
+
         const { axis0Data, axis1Data } = getAxisDataRange(targetSeries)
 
         // 生成 Y 轴数组
@@ -109,6 +113,7 @@ export const useChartOption = () => {
                     rich: item.legendRich ?? { one: { width: 60, fontSize: 12 } }
                 },
                 formatter: item.legendFormatter ?? ((name: string) => `{one|${name}}`),
+                selected: selectedLegends // 保持图例选中状态同步
             },
             color: item.color ?? DEFAULT_COLORS,
             dataZoom: item.dataZoom ?? [
@@ -140,7 +145,7 @@ export const useChartOption = () => {
                 nameLocation: item.xNameLocation ?? 'end'
             }],
             yAxis: finalYAxis,
-            series: targetSeries as any, // 映射到 ECharts 内部 SeriesOption
+            series: item.series as any, // 系列数据保持全量，由 ECharts 内部通过 selected 状态处理显示，但我们计算 Y 轴时只看可见的
             graphic: item.graphic,
             visualMap: item.visualMap
         }
