@@ -55,7 +55,27 @@ const initChart = () => {
 // 监听配置变化
 watch(() => props.option, (newOpt) => {
   if (chartInstance.value) {
-    chartInstance.value.setOption(newOpt, { notMerge: true })
+    const updateOpt = { ...newOpt }
+    
+    // 提取当前的 dataZoom 状态，防止重新计算 Option 时重置缩放
+    const currentOption = chartInstance.value.getOption() as any
+    if (currentOption && currentOption.dataZoom && Array.isArray(updateOpt.dataZoom)) {
+      updateOpt.dataZoom = updateOpt.dataZoom.map((dz: any, index: number) => {
+        const currentDz = currentOption.dataZoom[index]
+        if (currentDz) {
+          return {
+            ...dz,
+            start: currentDz.start,
+            end: currentDz.end,
+            startValue: currentDz.startValue,
+            endValue: currentDz.endValue
+          }
+        }
+        return dz
+      })
+    }
+
+    chartInstance.value.setOption(updateOpt, { notMerge: true })
   }
 }, { deep: true })
 

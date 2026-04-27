@@ -118,7 +118,10 @@ export const useChartOption = () => {
                 formatter: item.tooltipFormatter || ((params: any) => defaultTooltipFormatter(params, item, !!item.doubleY)),
                 axisPointer: { label: { backgroundColor: '#6a7985' } }
             },
-            legend: item.legend ?? {
+            legend: item.legend ? {
+                ...item.legend,
+                selected: selectedLegends ?? item.legend.selected
+            } : {
                 show: item.legendShow ?? true,
                 left: item.legendLocation ?? 'center',
                 top: item.legendTop ?? 'top',
