@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import type { ChartOptions, TableColumn } from './types'
 
 export function useChartTable() {
@@ -6,18 +6,28 @@ export function useChartTable() {
     const tableData = ref<Array<Record<string, any>>>([])
     const tableHeader = ref<TableColumn[]>([])
     const showValue = ref(true)
+    
+    // 标记是否需要刷新数据（当数据变化但表格不可见时标记为 true）
+    const needsRefresh = ref(false)
+    let lastConfig: ChartOptions | null = null
 
-    const calculateTableData = (item: ChartOptions) => {
-        // 初始化表头
+    const calculateTableData = (item: ChartOptions, force = false) => {
+        lastConfig = item
+        
+        // 如果表格不可见且不强制刷新，则只标记，不计算
+        if (showValue.value && !force) {
+            needsRefresh.value = true
+            return
+        }
+
+        // 执行计算
         tableHeader.value = [{
             title: item.title || '时间',
             key: 'timeList',
         }]
 
-        // 初始化表体 
         tableData.value = item.timeList?.map(time => ({ timeList: time })) || []
 
-        // 遍历数据，生成表头和表体
         item.series?.forEach(({ name, tableUnit, data }) => {
             const updatedName = tableUnit ? `${name}${tableUnit}` : name
             tableHeader.value.push({
@@ -31,13 +41,21 @@ export function useChartTable() {
             })
         })
 
-        // 删除首尾点
         if (item.deleteLastPoint) {
             tableData.value.pop()
         } else if (item.deleteFirstPoint) {
             tableData.value.shift()
         }
+        
+        needsRefresh.value = false
     }
+
+    // 当切换到表格视图时，如果需要刷新则立即执行
+    watch(showValue, (isChart) => {
+        if (!isChart && needsRefresh.value && lastConfig) {
+            calculateTableData(lastConfig, true)
+        }
+    })
 
     return {
         showTable,

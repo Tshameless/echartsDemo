@@ -74,17 +74,6 @@ const handleLegendChange = (params: any) => {
     finalOption.value = getFinalOption(currentOpt, filteredSeries)
 }
 
-/** 核心更新函数 */
-const updateAll = (config: ChartOptions) => {
-    // 更新 ECharts 配置
-    finalOption.value = getFinalOption(config)
-    
-    // 如果表格开启，则更新表格数据
-    if (showTable.value) {
-        calculateTableData(config)
-    }
-}
-
 // 防抖处理配置变化
 const debouncedUpdate = debounce((newVal: ChartOptions) => {
     if (newVal && Object.keys(newVal).length > 0) {
@@ -92,21 +81,48 @@ const debouncedUpdate = debounce((newVal: ChartOptions) => {
     }
 }, 50)
 
-// 监听配置对象变化
-watch(() => processedOpt.value, (newVal) => {
-    debouncedUpdate(newVal)
-}, { deep: true, immediate: true })
-
 // 暴露 API
 defineExpose({
     resize: () => rendererRef.value?.resize()
 })
 
+// 核心更新函数
+const updateAll = (config: ChartOptions, isDataChange = true) => {
+    finalOption.value = getFinalOption(config)
+    
+    // 只要数据变化，就通知表格 Hook（Hook 内部会处理懒加载逻辑）
+    if (isDataChange) {
+        calculateTableData(config)
+    }
+}
+
+// 1. 监听数据核心属性变化（触发全量更新）
+watch(
+    () => [processedOpt.value.series, processedOpt.value.timeList],
+    () => {
+        debouncedUpdate(processedOpt.value)
+    },
+    { deep: true }
+)
+
+// 2. 监听样式类属性变化（仅更新图表配置，不触发表格）
+watch(
+    () => {
+        const { series, timeList, ...rest } = processedOpt.value
+        return rest
+    },
+    () => {
+        finalOption.value = getFinalOption(processedOpt.value)
+    },
+    { deep: true }
+)
+
+// 初始加载
 onMounted(() => {
-    // 初始化同步显示状态
     if (props.opt.showTable !== undefined) {
         showTable.value = props.opt.showTable
     }
+    updateAll(processedOpt.value)
 })
 </script>
 
