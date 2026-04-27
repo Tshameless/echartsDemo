@@ -32,7 +32,7 @@
 
 </template>
 <script lang="ts" setup>
-import { toRefs, onMounted, ref, onUnmounted, watch, nextTick, computed, shallowRef } from 'vue'
+import { toRef, toRefs, onMounted, ref, onUnmounted, watch, nextTick, computed, shallowRef } from 'vue'
 import * as eCharts from 'echarts'
 import { debounce } from 'lodash-es'
 import type { ChartOptions, LegendSelectChangedEvent } from './types'
@@ -54,7 +54,7 @@ const props = withDefaults(defineProps<LineChartProps>(), {
 
 // 解构 props
 const { opt } = toRefs(props)
-const height = ref(props.height)
+const height = toRef(props, 'height')
 
 // 定义响应式引用
 const eChartsBoxRef = ref<HTMLDivElement>()

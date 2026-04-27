@@ -1,3 +1,4 @@
+import type { EChartsOption } from 'echarts'
 import { defaultTooltipFormatter } from './utils'
 import type { ChartOptions } from './types'
 
@@ -6,8 +7,8 @@ const itemColorArr = ['red', '#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#99999
 
 export const useChartOption = () => {
     // 公共 option 生成
-    const getCommonOption = (item: ChartOptions, extra = {}) => ({
-            tooltip: item.tooltip ? item.tooltip : {
+    const getCommonOption = (item: ChartOptions, extra: EChartsOption = {}): EChartsOption => ({
+        tooltip: item.tooltip ? item.tooltip : {
             show: item.tooltipShow ?? true,
             trigger: item.tooltipTrigger ?? 'axis',
             backgroundColor: item.tooltipBackgroundColor ?? "rgba(0,0,0,.3)",
@@ -78,10 +79,10 @@ export const useChartOption = () => {
                 },
                 axisLabel: item.xAxisLabel ?? {
                     color: item.xColor ?? "#fff",
-                    fontSize: item.xFontSize ?? "12px",
+                    fontSize: item.xFontSize ?? 12,
                     fontWeight: item.xFontWeight ?? "normal",
-                    showMinLabel: item.compensateType === 'start' ? true : null,
-                    showMaxLabel: item.compensateType === 'end' ? true : null,
+                    showMinLabel: item.compensateType === 'start' ? true : undefined,
+                    showMaxLabel: item.compensateType === 'end' ? true : undefined,
                 },
                 nameTextStyle: {
                     color: item.xUnitColor ?? '#fff',
