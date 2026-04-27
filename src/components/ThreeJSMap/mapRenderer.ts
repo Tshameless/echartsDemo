@@ -179,17 +179,17 @@ export function createMapMeshFromGeoJSON(
         bevelEnabled: false
       })
       const mesh = new THREE.Mesh(geometry, material.clone())
-      ;(mesh as THREE.Mesh & { userData: { feature: GeoFeature } }).userData.feature = feature
+      ;((mesh as unknown) as THREE.Mesh & { userData: { feature: GeoFeature } }).userData.feature = feature
       group.add(mesh)
       meshes.push(mesh)
 
       // 立体时在顶面画边界线（顶面 z = depth）
       const points = shape.getPoints()
       if (points.length > 1) {
-        const pts = points.map((p) => new THREE.Vector3(p.x, p.y, depth))
+        const pts = points.map((point: THREE.Vector2) => new THREE.Vector3(point.x, point.y, depth))
         const lineGeom = new THREE.BufferGeometry().setFromPoints(pts)
         const line = new THREE.Line(lineGeom, outlineMaterial)
-        ;(line as THREE.Line & { userData: { feature: GeoFeature } }).userData.feature = feature
+        ;((line as unknown) as THREE.Line & { userData: { feature: GeoFeature } }).userData.feature = feature
         group.add(line)
       }
     })

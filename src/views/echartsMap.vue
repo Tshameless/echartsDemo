@@ -9,10 +9,24 @@ import { ref, nextTick } from 'vue';
 import * as echarts from 'echarts';
 import echartsMap from '@/components/echartsMap.vue';
 
-const markers = ref([])
+interface TreeRefExpose {
+    setFilterText: (value: string) => void
+}
+
+interface MarkerItem {
+    areaCode: string
+    value: number
+    stationMapList: any[]
+}
+
+interface TabListItem {
+    tableData: any[]
+}
+
+const markers = ref<MarkerItem[]>([])
 const Nowtab = ref(0)
 const cityCode = ref('')
-const TreeRef = ref(null)
+const TreeRef = ref<TreeRefExpose | null>(null)
 const onlineStatus = ref('')
 const yesterday_Option = ref({})
 const storagy_Option = ref({})
@@ -23,7 +37,7 @@ const profitList = ref<any[]>([])
 const chartData = ref<any[]>([])
 const IsOnlineobj = ref({ income: 0, outcome: 0 })
 const tableData = ref<any[]>([])
-const tabList = ref([
+const tabList = ref<TabListItem[]>([
     { tableData: [] },
     { tableData: [] },
     { tableData: [] }

@@ -1,0 +1,28 @@
+import type * as eCharts from 'echarts'
+import type { ChartOptions } from '@/components/lineEcharts/types'
+
+export interface LinkedChartsProps {
+  opt?: ChartOptions
+  opts?: ChartOptions[]
+  titles?: string[]
+  height: number
+  groupId?: string
+  showTable?: boolean
+  tablePosition?: 'switch' | 'bottom'
+  showChartView?: boolean
+  tableMaxHeight?: number
+  unifiedTooltip?: boolean
+}
+
+export interface LinkedChartRenderItem {
+  key: string
+  title: string
+}
+
+export interface LinkedChartTableRow {
+  __rowKey: string
+  时间: string | number
+  [key: string]: string | number
+}
+
+export type LinkedChartsReadyPayload = eCharts.ECharts | eCharts.ECharts[]

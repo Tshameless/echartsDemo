@@ -65,6 +65,11 @@ const { resize } = useChartResize(myChart, eChartsBoxRef)
 const { showTable, tableData, tableHeader, showValue, calculateTableData } = useChartTable()
 const { getCommonOption } = useChartOption()
 
+const getNumericSeriesValue = (value: number | { value: number; name: string } | null | undefined) => {
+    if (value == null) return null
+    return typeof value === 'object' ? value.value : value
+}
+
 
 // 使用计算属性处理补点逻辑，避免直接修改props和重复计算
 const processedOpt = computed(() => {
@@ -164,11 +169,12 @@ const getAxisData = (series: ChartOptions['series']) => {
         if (!s.data) return
         // 避免使用 spread operator 处理大数组
         s.data.forEach(d => {
-            if (d !== null && d !== undefined) {
+            const numericValue = getNumericSeriesValue(d)
+            if (numericValue !== null) {
                 if (s.yAxisIndex === 1) {
-                    axis1Data.push(d)
+                    axis1Data.push(numericValue)
                 } else {
-                    axis0Data.push(d)
+                    axis0Data.push(numericValue)
                 }
             }
         })

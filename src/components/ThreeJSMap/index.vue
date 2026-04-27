@@ -43,7 +43,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createMapMeshFromGeoJSON, type GeoJSONCollection, type GeoFeature, type LabelPosition } from './mapRenderer'
 import { getStationsForLevel, getProvinceStationCount, getCityStationCount, type Station } from './stationData'
-import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js'
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 
 // 层级对应的 JSON 映射：当前层级点击的 adcode -> 下一层 JSON 路径
 const LEVEL_MAP: Record<number, string> = {
@@ -120,7 +120,7 @@ const addMapToScene = (geojson: GeoJSONCollection): { meshes: THREE.Mesh[]; labe
 
 const clearLabels = () => {
   if (labelGroup) {
-    labelGroup.traverse((obj) => {
+    labelGroup.traverse((obj: CSS2DObject | THREE.Object3D) => {
       if (obj instanceof CSS2DObject && obj.element && obj.element.parentNode) {
         obj.element.parentNode.removeChild(obj.element)
       }
@@ -129,7 +129,7 @@ const clearLabels = () => {
     labelGroup = null
   }
   if (stationGroup) {
-    stationGroup.traverse((obj) => {
+    stationGroup.traverse((obj: CSS2DObject | THREE.Object3D) => {
       if (obj instanceof CSS2DObject && obj.element && obj.element.parentNode) {
         obj.element.parentNode.removeChild(obj.element)
       }

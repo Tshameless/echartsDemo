@@ -8,13 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    copy: typeof import('./src/components/lineEcharts copy.vue')['default']
-    Echarts: typeof import('./src/components/Echarts.vue')['default']
     EchartsMap: typeof import('./src/components/echartsMap.vue')['default']
-    EchartsMap_fixed: typeof import('./src/components/echartsMap_fixed.vue')['default']
-    FinalVersion: typeof import('./src/components/finalVersion.vue')['default']
-    ForCenter: typeof import('./src/components/forCenter.vue')['default']
-    HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']
     IconEcosystem: typeof import('./src/components/icons/IconEcosystem.vue')['default']
@@ -24,14 +18,14 @@ declare module 'vue' {
     'LineEcharts_version1.0': typeof import('./src/components/lineEcharts_version1.0.vue')['default']
     'LineEcharts_version1.01A': typeof import('./src/components/lineEcharts_version1.01A.vue')['default']
     LinkedCharts: typeof import('./src/components/LinkedCharts/index.vue')['default']
-    NButton: typeof import('naive-ui')['NButton']
+    LinkedChartsCanvasList: typeof import('./src/components/LinkedCharts/LinkedChartsCanvasList.vue')['default']
+    LinkedChartsDataTable: typeof import('./src/components/LinkedCharts/LinkedChartsDataTable.vue')['default']
+    LinkedChartsToolbar: typeof import('./src/components/LinkedCharts/LinkedChartsToolbar.vue')['default']
+    LinkedChartsUnifiedTooltip: typeof import('./src/components/LinkedCharts/LinkedChartsUnifiedTooltip.vue')['default']
     NDataTable: typeof import('naive-ui')['NDataTable']
-    NInputNumber: typeof import('naive-ui')['NInputNumber']
     NSwitch: typeof import('naive-ui')['NSwitch']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    TheWelcome: typeof import('./src/components/TheWelcome.vue')['default']
     ThreeJSMap: typeof import('./src/components/ThreeJSMap/index.vue')['default']
-    WelcomeItem: typeof import('./src/components/WelcomeItem.vue')['default']
   }
 }
