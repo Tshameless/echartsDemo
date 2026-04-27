@@ -10,12 +10,12 @@
           class="switch-btn"
           :class="{ active: displayChart }"
           @click="setChartView(true)"
-        >图</span>
+        >{{ props.chartLabel || '图' }}</span>
         <span
           class="switch-btn"
           :class="{ active: !displayChart }"
           @click="setChartView(false)"
-        >表</span>
+        >{{ props.tableLabel || '表' }}</span>
       </div>
     </div>
 
@@ -42,9 +42,9 @@
         :data="tableRows"
         :max-height="props.tableMaxHeight"
         :virtual-scroll="enableTableVirtualScroll"
-        :min-row-height="39"
+        :min-row-height="props.tableMinRowHeight || 39"
         :row-key="getTableRowKey"
-        :scroll-x="1200"
+        :scroll-x="props.tableScrollX || 1200"
         striped
         bordered
       />
@@ -74,7 +74,12 @@ const props = withDefaults(defineProps<LinkedChartsProps>(), {
   groupId: '',
   tablePosition: 'switch',
   tableMaxHeight: 500,
+  tableScrollX: 1200,
+  tableMinRowHeight: 39,
   unifiedTooltip: true,
+  chartLabel: '图',
+  tableLabel: '表',
+  timeColumnTitle: '时间',
 })
 
 const emit = defineEmits<{

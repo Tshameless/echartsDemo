@@ -187,23 +187,31 @@ export function useLinkedChartOption() {
   }
 
   /** 更新图表配置 */
-  const updateChartOption = (item: ChartOptions, chart: eCharts.ECharts) => {
+  const updateChartOption = (item: ChartOptions, chart: eCharts.ECharts, notMerge = true) => {
     if (!chart || chart.isDisposed()) return
 
-    const { axis0Data, axis1Data } = getAxisData(item.series)
-    const yAxis = [
-      createYAxisOption(item, 0, axis1Data),
-      ...(item.doubleY ? [createYAxisOption(item, 1, axis0Data)] : []),
-    ]
+    // 如果是不合并更新（完整更新），需要重新计算 Y 轴等配置
+    if (notMerge) {
+      const { axis0Data, axis1Data } = getAxisData(item.series)
+      const yAxis = [
+        createYAxisOption(item, 0, axis1Data),
+        ...(item.doubleY ? [createYAxisOption(item, 1, axis0Data)] : []),
+      ]
 
-    const finalYAxis = (item.yAxis && !item.doubleY) ? item.yAxis : yAxis
-    const finalOption = {
-      ...getBaseOption(item),
-      yAxis: finalYAxis,
-      series: item.series,
+      const finalYAxis = (item.yAxis && !item.doubleY) ? item.yAxis : yAxis
+      const finalOption = {
+        ...getBaseOption(item),
+        yAxis: finalYAxis,
+        series: item.series,
+      }
+      chart.setOption(finalOption, { notMerge: true })
+    } else {
+      // 如果是合并更新（仅更新数据或部分配置），直接设置
+      chart.setOption({
+        series: item.series,
+        xAxis: item.xAxis || [{ data: item.timeList }],
+      }, { notMerge: false })
     }
-
-    chart.setOption(finalOption, { notMerge: true })
   }
 
   return {

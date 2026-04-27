@@ -157,14 +157,19 @@ export function useLinkedChartRuntime({
     const list = chartList.value
     if (!list.length) return cleanup()
 
-    if (myCharts.value.length !== list.length) return setupCharts()
+    // 如果图表数量发生变化，需要重新初始化或清理
+    if (myCharts.value.length !== list.length) {
+      return setupCharts()
+    }
 
     const unified = isUnifiedTooltipEnabled()
     list.forEach((item, index) => {
       const chart = myCharts.value[index]
       if (!chart || chart.isDisposed()) return
+      
       const finalOpt = unified ? { ...item, tooltipShow: false } : item
-      updateChartOption(finalOpt, chart)
+      // 使用合并更新（incremental update），除非明确需要完整重绘
+      updateChartOption(finalOpt, chart, false)
     })
 
     if (unified) bindUnifiedTooltipEvents()
@@ -190,7 +195,8 @@ export function useLinkedChartRuntime({
     cleanup()
   })
 
-  // 深度监听配置变化
+  // 监听配置变化：只有在配置项引用变化或深度变化时触发
+  // 保持 deep: true 但由于使用了 incremental update，性能损耗会显著降低
   watch(chartList, () => debouncedUpdate(), { deep: true })
 
   // 监听模式变化

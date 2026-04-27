@@ -11,7 +11,12 @@ export interface LinkedChartsProps {
   tablePosition?: 'switch' | 'bottom'
   showChartView?: boolean
   tableMaxHeight?: number
+  tableScrollX?: number
+  tableMinRowHeight?: number
   unifiedTooltip?: boolean
+  chartLabel?: string
+  tableLabel?: string
+  timeColumnTitle?: string
 }
 
 export interface LinkedChartRenderItem {

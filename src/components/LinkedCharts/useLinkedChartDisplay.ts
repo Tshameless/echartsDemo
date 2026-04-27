@@ -83,7 +83,7 @@ export function useLinkedChartDisplay({
   /** 表格列定义 */
   const dataTableColumns = computed(() => [
     {
-      title: '时间',
+      title: props.timeColumnTitle || '时间',
       key: '时间',
       fixed: 'left' as const,
       width: 80,
