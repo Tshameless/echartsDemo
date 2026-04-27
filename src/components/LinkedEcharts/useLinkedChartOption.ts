@@ -1,6 +1,6 @@
 import * as eCharts from 'echarts'
-import type { ChartOptions, LegendSelectChangedEvent } from '@/components/lineEcharts/types'
-import { calcYAxisMax, calcYAxisMin, escapeHtml } from '@/components/lineEcharts/utils'
+import type { ChartOptions, LegendSelectChangedEvent } from '@/components/Echarts/types'
+import { calcYAxisMax, calcYAxisMin, escapeHtml } from '@/components/Echarts/utils'
 
 /** 默认图表色板 */
 export const DEFAULT_CHART_COLORS = ['#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
@@ -115,7 +115,7 @@ export function useLinkedChartOption() {
       },
     },
     legend: item.legend ?? {
-      show: item.legendshowValue ?? true,
+      show: item.legendShow ?? true,
       left: item.legendLocation ?? 'center',
       top: item.legendTop ?? 'top',
       orient: item.legendOrient ?? 'horizontal',

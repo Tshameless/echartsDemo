@@ -11,8 +11,8 @@ import {
 } from 'vue'
 import * as eCharts from 'echarts'
 import { debounce } from 'lodash-es'
-import type { ChartOptions } from '@/components/lineEcharts/types'
-import type { LinkedChartsReadyPayload } from './types'
+import type { ChartOptions } from '@/components/Echarts/types'
+import type { LinkedEchartsReadyPayload } from './types'
 import { useLinkedChartOption } from './useLinkedChartOption'
 import { useLinkedChartTooltip } from './useLinkedChartTooltip'
 
@@ -22,7 +22,7 @@ interface UseLinkedChartRuntimeOptions {
   chartList: ComputedRef<ChartOptions[]>
   getGroupId: () => string
   isUnifiedTooltipEnabled: () => boolean
-  onChartReady: (payload: LinkedChartsReadyPayload) => void
+  onChartReady: (payload: LinkedEchartsReadyPayload) => void
 }
 
 export function useLinkedChartRuntime({
@@ -51,7 +51,7 @@ export function useLinkedChartRuntime({
 
 
 
-  function cleanupLinkedCharts() {
+  function cleanupLinkedEcharts() {
     if (connectedGroupId) {
       eCharts.disconnect(connectedGroupId)
       connectedGroupId = null
@@ -74,7 +74,7 @@ export function useLinkedChartRuntime({
     if (resizeRaf !== null) cancelAnimationFrame(resizeRaf)
     if (resizeObserver) resizeObserver.disconnect()
     cleanupUnifiedTooltipEvents()
-    cleanupLinkedCharts()
+    cleanupLinkedEcharts()
     disposeCharts()
   }
 
@@ -129,7 +129,7 @@ export function useLinkedChartRuntime({
     if (unified) nextTick(bindUnifiedTooltipEvents)
     else cleanupUnifiedTooltipEvents()
 
-    cleanupLinkedCharts()
+    cleanupLinkedEcharts()
     const valid = instances.filter(Boolean) as eCharts.ECharts[]
     if (valid.length > 1) {
       if (groupId) eCharts.connect(groupId)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { LinkedChartsProps, LinkedChartsReadyPayload } from './types'
+import type { LinkedEchartsProps, LinkedEchartsReadyPayload } from './types'
 import { useLinkedChartDisplay } from './useLinkedChartDisplay'
 import { useLinkedChartRuntime } from './useLinkedChartRuntime'
 
@@ -9,7 +9,7 @@ import ChartRenderer from './components/ChartRenderer.vue'
 import DataTableRenderer from './components/DataTableRenderer.vue'
 import UnifiedTooltipRenderer from './components/UnifiedTooltipRenderer.vue'
 
-const props = withDefaults(defineProps<LinkedChartsProps>(), {
+const props = withDefaults(defineProps<LinkedEchartsProps>(), {
   groupId: '',
   tablePosition: 'switch',
   tableMaxHeight: 500,
@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<LinkedChartsProps>(), {
 })
 
 const emit = defineEmits<{
-  (event: 'chart-ready', payload: LinkedChartsReadyPayload): void
+  (event: 'chart-ready', payload: LinkedEchartsReadyPayload): void
   (event: 'update:showChartView', value: boolean): void
 }>()
 

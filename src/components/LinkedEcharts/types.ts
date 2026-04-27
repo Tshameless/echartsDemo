@@ -1,7 +1,7 @@
 import type * as eCharts from 'echarts'
-import type { ChartOptions } from '@/components/lineEcharts/types'
+import type { ChartOptions } from '@/components/Echarts/types'
 
-export interface LinkedChartsProps {
+export interface LinkedEchartsProps {
   opt?: ChartOptions
   opts?: ChartOptions[]
   titles?: string[]
@@ -30,7 +30,7 @@ export interface LinkedChartTableRow {
   [key: string]: string | number
 }
 
-export type LinkedChartsReadyPayload = eCharts.ECharts | eCharts.ECharts[]
+export type LinkedEchartsReadyPayload = eCharts.ECharts | eCharts.ECharts[]
 
 export interface UnifiedTooltipRow {
   name: string

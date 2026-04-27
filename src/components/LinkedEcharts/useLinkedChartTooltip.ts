@@ -7,8 +7,8 @@ import {
   type ShallowRef,
 } from 'vue'
 import * as eCharts from 'echarts'
-import type { ChartOptions, ChartSeriesData } from '@/components/lineEcharts/types'
-import { escapeHtml } from '@/components/lineEcharts/utils'
+import type { ChartOptions, ChartSeriesData } from '@/components/Echarts/types'
+
 import { DEFAULT_CHART_COLORS } from './useLinkedChartOption'
 
 import type {

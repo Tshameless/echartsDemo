@@ -32,7 +32,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue"
-import lineECharts from "../components/lineEcharts/index.vue"
+import lineECharts from "../components/Echarts/index.vue"
 import usePowerIcon from '../assets/img/usePowerIcon.png';
 import dayjs from "dayjs"
 

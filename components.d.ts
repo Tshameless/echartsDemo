@@ -8,8 +8,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    ChartRenderer: typeof import('./src/components/lineEcharts/components/ChartRenderer.vue')['default']
-    DataTableRenderer: typeof import('./src/components/lineEcharts/components/DataTableRenderer.vue')['default']
+    ChartRenderer: typeof import('./src/components/Echarts/components/ChartRenderer.vue')['default']
+    DataTableRenderer: typeof import('./src/components/Echarts/components/DataTableRenderer.vue')['default']
+    Echarts: typeof import('./src/components/Echarts/index.vue')['default']
     EchartsMap: typeof import('./src/components/echartsMap.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']
@@ -19,17 +20,17 @@ declare module 'vue' {
     LineEcharts: typeof import('./src/components/lineEcharts/index.vue')['default']
     'LineEcharts_version1.0': typeof import('./src/components/lineEcharts_version1.0.vue')['default']
     'LineEcharts_version1.01A': typeof import('./src/components/lineEcharts_version1.01A.vue')['default']
-    LinkedCharts: typeof import('./src/components/LinkedCharts/index.vue')['default']
-    LinkedChartsCanvasList: typeof import('./src/components/LinkedCharts/LinkedChartsCanvasList.vue')['default']
-    LinkedChartsDataTable: typeof import('./src/components/LinkedCharts/LinkedChartsDataTable.vue')['default']
-    LinkedChartsToolbar: typeof import('./src/components/LinkedCharts/LinkedChartsToolbar.vue')['default']
-    LinkedChartsUnifiedTooltip: typeof import('./src/components/LinkedCharts/LinkedChartsUnifiedTooltip.vue')['default']
+    LinkedEcharts: typeof import('./src/components/LinkedEcharts/index.vue')['default']
+    LinkedEchartsCanvasList: typeof import('./src/components/LinkedEcharts/LinkedEchartsCanvasList.vue')['default']
+    LinkedEchartsDataTable: typeof import('./src/components/LinkedEcharts/LinkedEchartsDataTable.vue')['default']
+    LinkedEchartsToolbar: typeof import('./src/components/LinkedEcharts/LinkedEchartsToolbar.vue')['default']
+    LinkedEchartsUnifiedTooltip: typeof import('./src/components/LinkedEcharts/LinkedEchartsUnifiedTooltip.vue')['default']
     NDataTable: typeof import('naive-ui')['NDataTable']
     NSwitch: typeof import('naive-ui')['NSwitch']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     ThreeJSMap: typeof import('./src/components/ThreeJSMap/index.vue')['default']
-    Toolbar: typeof import('./src/components/LinkedCharts/components/Toolbar.vue')['default']
-    UnifiedTooltipRenderer: typeof import('./src/components/LinkedCharts/components/UnifiedTooltipRenderer.vue')['default']
+    Toolbar: typeof import('./src/components/LinkedEcharts/components/Toolbar.vue')['default']
+    UnifiedTooltipRenderer: typeof import('./src/components/LinkedEcharts/components/UnifiedTooltipRenderer.vue')['default']
   }
 }

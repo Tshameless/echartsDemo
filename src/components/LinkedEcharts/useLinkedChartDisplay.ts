@@ -1,15 +1,15 @@
 import { computed, shallowRef } from 'vue'
-import type { ChartOptions, ChartSeriesData } from '@/components/lineEcharts/types'
+import type { ChartOptions, ChartSeriesData } from '@/components/Echarts/types'
 import type {
   LinkedChartRenderItem,
-  LinkedChartsProps,
+  LinkedEchartsProps,
   LinkedChartTableRow,
 } from './types'
 
 const TABLE_VIRTUAL_SCROLL_THRESHOLD = 100
 
 interface UseLinkedChartDisplayOptions {
-  props: Readonly<LinkedChartsProps>
+  props: Readonly<LinkedEchartsProps>
   onUpdateShowChartView: (value: boolean) => void
 }
 

@@ -1,9 +1,9 @@
 <template>
   <div class="link-charts-demo">
-    <div class="demo-title">LinkedCharts 多图联动演示</div>
+    <div class="demo-title">LinkedEcharts 多图联动演示</div>
 
     <div class="charts-container">
-      <LinkedCharts ref="linkedChartsRef" v-if="chartOptionsList.length > 0" v-model:show-chart-view="showChartView"
+      <LinkedEcharts ref="LinkedEchartsRef" v-if="chartOptionsList.length > 0" v-model:show-chart-view="showChartView"
         :opts="chartOptionsList" :showTable="true" table-position="bottom" :titles="chartTitles" :height="250"
         :table-max-height="500" group-id="storage-monitor">
         <template #header>
@@ -13,14 +13,14 @@
               value-format="YYYY-MM-DD" @change="handleDateChange" />
           </div>
         </template>
-      </LinkedCharts>
+      </LinkedEcharts>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import LinkedCharts from '@/components/LinkedCharts/index.vue'
+import LinkedEcharts from '@/components/LinkedEcharts/index.vue'
 
 const selectedDate = ref('2026-01-01')
 const showChartView = ref(true)
@@ -182,7 +182,7 @@ const chartOptions4 = ref({
   ],
 })
 
-const linkedChartsRef = ref(null)
+const LinkedEchartsRef = ref(null)
 
 // 多图联动：一次传入所有图表配置与标题
 const chartOptionsList = computed(() => [
