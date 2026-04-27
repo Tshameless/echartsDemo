@@ -40,7 +40,7 @@ export function useLinkedChartRuntime({
     bindUnifiedTooltipEvents,
     cleanupUnifiedTooltipEvents,
     setUnifiedTooltipRef,
-    unifiedTooltipContent,
+    unifiedTooltipData,
     unifiedTooltipStyle,
     unifiedTooltipVisible,
   } = useLinkedChartTooltip({ chartList, isUnifiedTooltipEnabled, myCharts })
@@ -211,7 +211,7 @@ export function useLinkedChartRuntime({
     setBoxRef,
     setContainerRef,
     setUnifiedTooltipRef,
-    unifiedTooltipContent,
+    unifiedTooltipData,
     unifiedTooltipStyle,
     unifiedTooltipVisible,
   }

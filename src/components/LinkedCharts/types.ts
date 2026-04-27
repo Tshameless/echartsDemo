@@ -31,3 +31,18 @@ export interface LinkedChartTableRow {
 }
 
 export type LinkedChartsReadyPayload = eCharts.ECharts | eCharts.ECharts[]
+
+export interface UnifiedTooltipRow {
+  name: string
+  value: string | number
+  color: string
+  unit: string
+}
+
+export interface UnifiedTooltipData {
+  title: string
+  sections: {
+    chartTitle?: string
+    rows: UnifiedTooltipRow[]
+  }[]
+}

@@ -11,16 +11,12 @@ import type { ChartOptions, ChartSeriesData } from '@/components/lineEcharts/typ
 import { escapeHtml } from '@/components/lineEcharts/utils'
 import { DEFAULT_CHART_COLORS } from './useLinkedChartOption'
 
-const TOOLTIP_OFFSET = 16
+import type {
+  UnifiedTooltipData,
+  UnifiedTooltipRow,
+} from './types'
 
-const STYLES = {
-  wrap: 'padding: 12px 16px; min-width: 200px;',
-  title: 'margin-bottom: 10px; font-size: 14px; color: #333; font-weight: 500;',
-  divider: 'height: 1px; margin: 8px 0; background: rgba(0,0,0,0.05);',
-  row: 'margin: 6px 0; display: flex; align-items: center; justify-content: space-between; gap: 24px;',
-  text: 'color: #333; font-size: 13px;',
-  marker: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;',
-} as const
+const TOOLTIP_OFFSET = 16
 
 interface AxisPointerHandler {
   zr: any
@@ -52,19 +48,13 @@ function getUnit(series: ChartSeriesData, opt: ChartOptions): string {
   return yName.includes('：') ? yName.split('：')[1] || '' : yName
 }
 
-/** 渲染单行数据 */
-function renderRow(name: string, value: string, color: string): string {
-  const marker = `<span style="${STYLES.marker}background-color:${escapeHtml(color)};"></span>`
-  return `<div style="${STYLES.row}">${marker}<span style="${STYLES.text}; flex: 1;">${escapeHtml(name)}</span><span style="${STYLES.text}; margin-left: auto; white-space: nowrap;">${escapeHtml(value)}</span></div>`
-}
-
 export function useLinkedChartTooltip({
   chartList,
   isUnifiedTooltipEnabled,
   myCharts,
 }: UseLinkedChartTooltipOptions) {
   const unifiedTooltipVisible = shallowRef(false)
-  const unifiedTooltipContent = shallowRef('')
+  const unifiedTooltipData = shallowRef<UnifiedTooltipData | null>(null)
   const unifiedTooltipStyle = ref<Record<string, string>>({ left: '0px', top: '0px' })
   const tooltipRef = ref<HTMLElement | null>(null)
 
@@ -74,19 +64,19 @@ export function useLinkedChartTooltip({
     tooltipRef.value = el instanceof HTMLElement ? el : null
   }
 
-  /** 构建工具提示 HTML */
-  function buildHtml(axisValue: string, dataIndex: number, hoveredIndex: number): string {
+  /** 构建工具提示数据 */
+  function buildData(axisValue: string, dataIndex: number, hoveredIndex: number): UnifiedTooltipData {
     const charts = chartList.value
     const order = [hoveredIndex, ...charts.map((_, i) => i).filter((i) => i !== hoveredIndex)]
-    const rows: string[] = []
+    
+    const sections: UnifiedTooltipData['sections'] = []
 
-    order.forEach((idx, i) => {
+    order.forEach((idx) => {
       const chart = myCharts.value[idx]
       const opt = charts[idx]
       if (!chart || !opt?.series) return
 
-      if (i > 0) rows.push(`<div style="${STYLES.divider}"></div>`)
-
+      const rows: UnifiedTooltipRow[] = []
       const colors = Array.isArray(opt.color) && opt.color.length ? opt.color : DEFAULT_CHART_COLORS
 
       opt.series.forEach((s, sIdx) => {
@@ -95,14 +85,28 @@ export function useLinkedChartTooltip({
         const raw = s.data?.[dataIndex]
         const val = typeof raw === 'object' && raw !== null && 'value' in raw ? raw.value : (raw ?? '--')
         const unit = getUnit(s, opt)
-        const display = val === '--' ? val : (unit ? `${val}${unit}` : val)
         const color = colors[sIdx % colors.length]
 
-        rows.push(renderRow(s.name, String(display), color))
+        rows.push({
+          name: s.name,
+          value: val,
+          color,
+          unit: val === '--' ? '' : unit,
+        })
       })
+
+      if (rows.length > 0) {
+        sections.push({
+          chartTitle: opt.title,
+          rows,
+        })
+      }
     })
 
-    return `<div style="${STYLES.wrap}"><div style="${STYLES.title}">${escapeHtml(axisValue)}</div>${rows.join('')}</div>`
+    return {
+      title: axisValue,
+      sections,
+    }
   }
 
   /** 更新提示框位置 */
@@ -133,7 +137,7 @@ export function useLinkedChartTooltip({
   }
 
   function showTooltip(e: MouseEvent, axisValue: string, dataIndex: number, hoveredIdx: number) {
-    unifiedTooltipContent.value = buildHtml(axisValue, dataIndex, hoveredIdx)
+    unifiedTooltipData.value = buildData(axisValue, dataIndex, hoveredIdx)
     updatePosition(e.clientX, e.clientY)
     unifiedTooltipVisible.value = true
     nextTick(() => updatePosition(e.clientX, e.clientY))
@@ -192,7 +196,7 @@ export function useLinkedChartTooltip({
     bindUnifiedTooltipEvents,
     cleanupUnifiedTooltipEvents,
     setUnifiedTooltipRef,
-    unifiedTooltipContent,
+    unifiedTooltipData,
     unifiedTooltipStyle,
     unifiedTooltipVisible,
   }
