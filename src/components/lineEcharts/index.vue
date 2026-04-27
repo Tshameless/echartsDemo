@@ -18,7 +18,7 @@
 
             <!-- 表格渲染器 -->
             <DataTableRenderer 
-                v-show="!isChartView"
+                v-if="!isChartView"
                 :columns="tableHeader"
                 :data="tableData"
                 :height="height"

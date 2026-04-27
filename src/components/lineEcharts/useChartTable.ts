@@ -1,85 +1,69 @@
-import { ref, watch, type Ref, watchEffect } from 'vue'
+import { ref, computed, type Ref } from 'vue'
 import type { ChartOptions, TableColumn } from './types'
 
 /**
  * 专门处理表格逻辑的 Hook
- * 优化点：直接接收配置引用，自动同步显示状态并按需计算数据
+ * 优化点：废除冗余的 ref/watch 与手动刷新机制，使用 computed 惰性派生状态
  */
 export function useChartTable(opt: Ref<ChartOptions>) {
-    // 内部状态
-    const showTable = ref(false)
-    const tableData = ref<Array<Record<string, any>>>([])
-    const tableHeader = ref<TableColumn[]>([])
+    // 视图切换状态（图表 / 表格），由内部组件 v-model 驱动，因此保留 ref
     const isChartView = ref(true)
-    const needsRefresh = ref(false)
 
-    /** 计算表格数据核心逻辑 */
-    const calculateTableData = (force = false) => {
+    // 是否显示图表/表格切换开关
+    const showTable = computed(() => {
+        return opt.value.showTable !== undefined ? opt.value.showTable : false
+    })
+
+    // 派生表头配置
+    const tableHeader = computed<TableColumn[]>(() => {
         const item = opt.value
         
-        // 性能优化：如果表格当前不可见且不强制，则仅标记不计算
-        if (isChartView.value && !force) {
-            needsRefresh.value = true
-            return
-        }
-
-        // 重置表头与数据
-        tableHeader.value = [{
+        const header: TableColumn[] = [{
             title: item.title || '时间',
             key: 'timeList',
         }]
-        tableData.value = item.timeList?.map(time => ({ timeList: time })) || []
 
-        // 填充各序列数据
-        item.series?.forEach(({ name, tableUnit, data }) => {
+        item.series?.forEach(({ name, tableUnit }) => {
             const updatedName = tableUnit ? `${name}${tableUnit}` : name
-            tableHeader.value.push({
+            header.push({
                 title: updatedName,
                 key: name,
             })
-            data.forEach((val, idx) => {
-                if (tableData.value[idx]) {
-                    tableData.value[idx][name] = val
+        })
+
+        return header
+    })
+
+    // 派生表格数据
+    const tableData = computed<Array<Record<string, any>>>(() => {
+        const item = opt.value
+        
+        // 构建时间列基础数据
+        const data = item.timeList?.map(time => ({ timeList: time })) || []
+
+        // 填充各个系列的值
+        item.series?.forEach(({ name, data: seriesData }) => {
+            seriesData.forEach((val, idx) => {
+                if (data[idx]) {
+                    data[idx][name] = val
                 }
             })
         })
 
         // 处理首尾点删除逻辑
         if (item.deleteLastPoint) {
-            tableData.value.pop()
+            data.pop()
         } else if (item.deleteFirstPoint) {
-            tableData.value.shift()
+            data.shift()
         }
         
-        needsRefresh.value = false
-    }
-
-    // 同步外部显示配置
-    watchEffect(() => {
-        if (opt.value.showTable !== undefined) {
-            showTable.value = opt.value.showTable
-        }
-    })
-
-    // 核心数据变化时触发表格更新
-    watch(
-        () => [opt.value.series, opt.value.timeList],
-        () => calculateTableData(),
-        { deep: true, immediate: true }
-    )
-
-    // 切换到表格视图时，按需执行延迟的计算
-    watch(isChartView, (val) => {
-        if (!val && needsRefresh.value) {
-            calculateTableData(true)
-        }
+        return data
     })
 
     return {
         showTable,
         tableData,
         tableHeader,
-        isChartView,
-        calculateTableData
+        isChartView
     }
 }
