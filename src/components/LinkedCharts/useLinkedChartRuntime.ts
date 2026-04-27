@@ -32,14 +32,14 @@ export function useLinkedChartRuntime({
   onChartReady,
 }: UseLinkedChartRuntimeOptions) {
   const containerRef = ref<HTMLDivElement | null>(null)
-  const boxRefs = ref<(HTMLDivElement | null)[]>([])
+  const boxRefs = ref<HTMLDivElement[]>([])
   const myCharts = shallowRef<(eCharts.ECharts | null)[]>([])
 
   const { updateChartOption, bindLegendSelectChanged } = useLinkedChartOption()
   const {
     bindUnifiedTooltipEvents,
     cleanupUnifiedTooltipEvents,
-    setUnifiedTooltipRef,
+    unifiedTooltipRef,
     unifiedTooltipData,
     unifiedTooltipStyle,
     unifiedTooltipVisible,
@@ -49,18 +49,7 @@ export function useLinkedChartRuntime({
   let resizeObserver: ResizeObserver | null = null
   let connectedGroupId: string | null = null
 
-  function setContainerRef(el: any) {
-    containerRef.value = el instanceof HTMLDivElement ? el : null
-  }
 
-  function setBoxRef(el: any, index: number) {
-    const div = el instanceof HTMLDivElement ? el : null
-    if (boxRefs.value[index] === div) return
-    const next = [...boxRefs.value]
-    while (next.length <= index) next.push(null)
-    next[index] = div
-    boxRefs.value = next
-  }
 
   function cleanupLinkedCharts() {
     if (connectedGroupId) {
@@ -207,10 +196,10 @@ export function useLinkedChartRuntime({
   return {
     exposedMyChart: computed(() => myCharts.value[0] ?? null),
     exposedMyCharts: computed(() => myCharts.value.filter(Boolean) as eCharts.ECharts[]),
+    boxRefs,
+    containerRef,
     resizeHandler: handleResize,
-    setBoxRef,
-    setContainerRef,
-    setUnifiedTooltipRef,
+    unifiedTooltipRef,
     unifiedTooltipData,
     unifiedTooltipStyle,
     unifiedTooltipVisible,

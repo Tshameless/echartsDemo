@@ -21,12 +21,12 @@
 
     <!-- Charts Section -->
     <div v-show="shouldShowChartContent" class="chart-content">
-      <div :ref="setContainerRef" class="linked-chart-container">
+      <div ref="containerRef" class="linked-chart-container">
         <template v-if="chartItems.length > 0">
           <div v-for="(item, index) in chartItems" :key="item.key" class="chart-item-wrap">
             <div v-if="item.title" class="chart-title">{{ item.title }}</div>
             <div
-              :ref="(el) => setBoxRef(el, index)"
+              ref="boxRefs"
               class="chart-box"
               :style="{ height: `${props.height}px`, maxHeight: `${props.height}px` }"
             ></div>
@@ -55,7 +55,7 @@
       <div
         v-if="Boolean(props.unifiedTooltip) && hasCharts && unifiedTooltipData"
         v-show="unifiedTooltipVisible"
-        :ref="setUnifiedTooltipRef"
+        ref="unifiedTooltipRef"
         class="unified-tooltip"
         :style="unifiedTooltipStyle"
       >
@@ -124,12 +124,12 @@ const {
 })
 
 const {
+  boxRefs,
+  containerRef,
   exposedMyChart,
   exposedMyCharts,
   resizeHandler,
-  setBoxRef,
-  setContainerRef,
-  setUnifiedTooltipRef,
+  unifiedTooltipRef,
   unifiedTooltipData,
   unifiedTooltipStyle,
   unifiedTooltipVisible,

@@ -60,9 +60,7 @@ export function useLinkedChartTooltip({
 
   let handlers: AxisPointerHandler[] = []
 
-  function setUnifiedTooltipRef(el: Element | ComponentPublicInstance | null) {
-    tooltipRef.value = el instanceof HTMLElement ? el : null
-  }
+
 
   /** 构建工具提示数据 */
   function buildData(axisValue: string, dataIndex: number, hoveredIndex: number): UnifiedTooltipData {
@@ -195,7 +193,7 @@ export function useLinkedChartTooltip({
   return {
     bindUnifiedTooltipEvents,
     cleanupUnifiedTooltipEvents,
-    setUnifiedTooltipRef,
+    unifiedTooltipRef: tooltipRef,
     unifiedTooltipData,
     unifiedTooltipStyle,
     unifiedTooltipVisible,
