@@ -17,9 +17,9 @@ export interface ChartSeriesData {
     /** Y轴索引，只有 doubleY 为 true 时生效 */
     yAxisIndex?: number
     /** 数据点 */
-    data: Array<number | null | { value: number; name: string }>
+    data: Array<number | string | null | { value: number | string | null; name?: string; [key: string]: any }>
     /** 原始数据，用于表格/统一 Tooltip 等 */
-    rawData?: (number | null)[]
+    rawData?: (number | string | null)[]
     /** 表格列单位 */
     tableUnit?: string
     barWidth?: number | string
@@ -30,6 +30,7 @@ export interface ChartSeriesData {
     label?: any
     emphasis?: any
     avoidLabelOverlap?: boolean
+    [key: string]: any
 }
 
 /** 坐标轴标签配置 */
@@ -157,5 +158,5 @@ export interface ChartOptions extends ChartStyleConfig {
     xAxis?: XAXisComponentOption | XAXisComponentOption[]
     yAxis?: YAXisComponentOption | YAXisComponentOption[]
     visualMap?: VisualMapComponentOption | VisualMapComponentOption[]
-    graphic?: GraphicComponentOption | GraphicComponentOption[]
+    graphic?: any // 使用 any 避免 ECharts 内部 ZRText 类私有属性导致的类型冲突
 }
