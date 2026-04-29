@@ -79,9 +79,14 @@ export function useLinkedChartTooltip({
 
       opt.series.forEach((s, sIdx) => {
         if (!isSeriesActive(chart, s.name)) return
+        // 增加对 tooltip: false 的显式支持
+        if ((s as any).tooltip === false) return
 
         const raw = s.data?.[dataIndex]
-        const val = typeof raw === 'object' && raw !== null && 'value' in raw ? raw.value : (raw ?? '--')
+        let val = typeof raw === 'object' && raw !== null && 'value' in raw ? raw.value : (raw ?? '--')
+        // 如果数值是数组（如 K 线图的 [open, close, high, low]），提示框中不显示原始数组字符串
+        if (Array.isArray(val)) val = ''
+        
         const unit = getUnit(s, opt)
         const color = colors[sIdx % colors.length]
 
