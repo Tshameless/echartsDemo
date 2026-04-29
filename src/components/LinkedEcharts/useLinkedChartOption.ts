@@ -103,7 +103,7 @@ export function useLinkedChartOption() {
   /** 获取 ECharts 基础配置 */
   const getBaseOption = (item: ChartOptions) => ({
     animation: false,
-    tooltip: {
+    tooltip:item.tooltip ?? {
       show: item.tooltipShow ?? true,
       trigger: item.tooltipTrigger ?? 'axis',
       backgroundColor: item.tooltipBackgroundColor ?? '#fff',
