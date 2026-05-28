@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { LinkedEchartsProps, LinkedEchartsReadyPayload } from './types'
+import type {
+  LinkedChartTableColumn,
+  LinkedChartTableRow,
+  LinkedEchartsProps,
+  LinkedEchartsReadyPayload
+} from './types'
 import { useLinkedChartDisplay } from './useLinkedChartDisplay'
 import { useLinkedChartRuntime } from './useLinkedChartRuntime'
 
@@ -26,6 +31,21 @@ const emit = defineEmits<{
   (event: 'update:showChartView', value: boolean): void
 }>()
 
+defineSlots<{
+  header?(): any
+  'header-left'?(): any
+  'header-right'?(): any
+  'chart-header-left'?(props: { item: { key: string; title: string }, index: number }): any
+  'chart-header-right'?(props: { item: { key: string; title: string }, index: number }): any
+  'chart-footer'?(props: { item: { key: string; title: string }, index: number }): any
+  table?(props: {
+    dataTableColumns: LinkedChartTableColumn[]
+    tableRows: LinkedChartTableRow[]
+    tableMaxHeight: number
+  }): any
+  footer?(): any
+}>()
+
 const {
   chartItems,
   chartList,
@@ -44,11 +64,11 @@ const {
 })
 
 const {
-  boxRefs,
-  containerRef,
   exposedMyChart,
   exposedMyCharts,
   resizeHandler,
+  setBoxRef,
+  setContainerRef,
   unifiedTooltipRef,
   unifiedTooltipData,
   unifiedTooltipStyle,
@@ -97,8 +117,8 @@ defineExpose({
       <ChartRenderer
         :chart-items="chartItems"
         :height="props.height"
-        @set-container-ref="el => { containerRef = el }"
-        @set-box-ref="(el, idx) => { boxRefs[idx] = el! }"
+        @set-container-ref="setContainerRef"
+        @set-box-ref="setBoxRef"
       >
         <template #chart-header-left="slotProps">
           <slot name="chart-header-left" v-bind="slotProps" />
@@ -114,15 +134,20 @@ defineExpose({
 
     <!-- Table Section -->
     <div v-if="shouldShowTableContent">
-      <DataTableRenderer
-        :data-table-columns="dataTableColumns"
-        :table-rows="tableRows"
-        :table-max-height="props.tableMaxHeight"
-        :enable-table-virtual-scroll="enableTableVirtualScroll"
-        :table-min-row-height="props.tableMinRowHeight || 39"
-        :get-table-row-key="getTableRowKey"
-        :table-scroll-x="props.tableScrollX || 1200"
-      />
+      <slot
+        name="table"
+        v-bind="{ dataTableColumns, tableRows, tableMaxHeight: props.tableMaxHeight }"
+      >
+        <DataTableRenderer
+          :data-table-columns="dataTableColumns"
+          :table-rows="tableRows"
+          :table-max-height="props.tableMaxHeight"
+          :enable-table-virtual-scroll="enableTableVirtualScroll"
+          :table-min-row-height="props.tableMinRowHeight || 39"
+          :get-table-row-key="getTableRowKey"
+          :table-scroll-x="props.tableScrollX || 1200"
+        />
+      </slot>
     </div>
 
     <!-- Footer Slot -->

@@ -1,9 +1,11 @@
 import { computed, shallowRef } from 'vue'
 import type { ChartOptions, ChartSeriesData } from '@/components/Echarts/types'
-import type {
-  LinkedChartRenderItem,
-  LinkedEchartsProps,
-  LinkedChartTableRow,
+import {
+  LINKED_CHART_TIME_FIELD,
+  type LinkedChartRenderItem,
+  type LinkedChartTableColumn,
+  type LinkedEchartsProps,
+  type LinkedChartTableRow
 } from './types'
 
 const TABLE_VIRTUAL_SCROLL_THRESHOLD = 100
@@ -27,9 +29,13 @@ function getTableCellValue(value: ChartSeriesData['data'][number] | number | nul
   return value
 }
 
+function buildFallbackTableField(chartIndex: number, seriesIndex: number) {
+  return `series_${chartIndex}_${seriesIndex}`
+}
+
 export function useLinkedChartDisplay({
   props,
-  onUpdateShowChartView,
+  onUpdateShowChartView
 }: UseLinkedChartDisplayOptions) {
   const localShowChartView = shallowRef(true)
 
@@ -41,7 +47,7 @@ export function useLinkedChartDisplay({
 
   // 基础显示逻辑判断
   const canShowTable = computed(
-    () => props.showTable ?? chartList.value.some((item) => item?.showTable === true),
+    () => props.showTable ?? chartList.value.some((item) => item?.showTable === true)
   )
   const isBottomTableMode = computed(() => props.tablePosition === 'bottom')
   const showSwitchToggle = computed(() => canShowTable.value && !isBottomTableMode.value)
@@ -53,14 +59,14 @@ export function useLinkedChartDisplay({
 
   const shouldShowChartContent = computed(() => displayChart.value)
   const shouldShowTableContent = computed(
-    () => canShowTable.value && (isBottomTableMode.value || !displayChart.value),
+    () => canShowTable.value && (isBottomTableMode.value || !displayChart.value)
   )
 
   const chartItems = computed<LinkedChartRenderItem[]>(() =>
     chartList.value.map((opt, index) => ({
       key: getChartItemKey(opt, index),
       title: props.titles?.[index] ?? opt?.title ?? '',
-    })),
+    }))
   )
 
   /** 统一提取所有图表的系列数据 */
@@ -69,28 +75,43 @@ export function useLinkedChartDisplay({
     if (list.length === 0) return { timeList: [], series: [] }
 
     const timeList = list[0]?.timeList || []
-    const series = list.flatMap((opt) =>
-      (opt?.series || []).map((s) => ({
-        name: s.name,
-        unit: s.tableUnit,
-        data: s.rawData ?? (s.data || []).map((d) => getTableCellValue(d) ?? null),
-      })),
+    const usedFields = new Set<string>([LINKED_CHART_TIME_FIELD])
+    const series = list.flatMap((opt, chartIndex) =>
+      (opt?.series || []).map((s, seriesIndex) => {
+        const preferredField = s.tableField?.trim() || buildFallbackTableField(chartIndex, seriesIndex)
+        let field = preferredField
+        let duplicateIndex = 1
+
+        while (usedFields.has(field)) {
+          field = `${preferredField}_${duplicateIndex}`
+          duplicateIndex += 1
+        }
+
+        usedFields.add(field)
+
+        return {
+          field,
+          name: s.name,
+          unit: s.tableUnit,
+          data: s.rawData ?? (s.data || []).map((d) => getTableCellValue(d) ?? null)
+        }
+      })
     )
 
     return { timeList, series }
   })
 
   /** 表格列定义 */
-  const dataTableColumns = computed(() => [
+  const dataTableColumns = computed<LinkedChartTableColumn[]>(() => [
     {
       title: props.timeColumnTitle || '时间',
-      key: '时间',
+      key: LINKED_CHART_TIME_FIELD,
       fixed: 'left' as const,
-      width: 80,
+      width: 120,
     },
     ...flatSeriesData.value.series.map((s) => ({
       title: s.name,
-      key: s.name,
+      key: s.field,
       minWidth: 120,
       ellipsis: { tooltip: true },
     })),
@@ -104,21 +125,21 @@ export function useLinkedChartDisplay({
     return timeList.map((time, index) => {
       const row: LinkedChartTableRow = {
         __rowKey: `${String(time)}-${index}`,
-        时间: time,
+        [LINKED_CHART_TIME_FIELD]: time,
       }
       series.forEach((s) => {
         const val = s.data[index]
-        row[s.name] = val ?? '--'
+        row[s.field] = val ?? '--'
       })
       return row
     })
   })
 
   const enableTableVirtualScroll = computed(
-    () => tableRows.value.length >= TABLE_VIRTUAL_SCROLL_THRESHOLD,
+    () => tableRows.value.length >= TABLE_VIRTUAL_SCROLL_THRESHOLD
   )
 
-  function getTableRowKey(row: LinkedChartTableRow) {
+  function getTableRowKey(row: LinkedChartTableRow): string {
     return row.__rowKey
   }
 
@@ -146,4 +167,3 @@ export function useLinkedChartDisplay({
     tableRows,
   }
 }
-

@@ -1,6 +1,11 @@
 import { ref, computed, type Ref } from 'vue'
 import type { ChartOptions, TableColumn } from './types'
 
+type ChartTableRow = {
+    timeList: string | number
+    [key: string]: unknown
+}
+
 /**
  * 专门处理表格逻辑的 Hook
  * 优化点：废除冗余的 ref/watch 与手动刷新机制，使用 computed 惰性派生状态
@@ -35,11 +40,11 @@ export function useChartTable(opt: Ref<ChartOptions>) {
     })
 
     // 派生表格数据
-    const tableData = computed<Array<Record<string, any>>>(() => {
+    const tableData = computed<ChartTableRow[]>(() => {
         const item = opt.value
         
         // 构建时间列基础数据
-        const data = item.timeList?.map(time => ({ timeList: time })) || []
+        const data: ChartTableRow[] = item.timeList?.map(time => ({ timeList: time })) || []
 
         // 填充各个系列的值
         item.series?.forEach(({ name, data: seriesData }) => {

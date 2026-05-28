@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { LinkedChartTableRow } from '../types'
+import type { LinkedChartTableColumn, LinkedChartTableRow } from '../types'
 
 defineProps<{
-  dataTableColumns: any[]
+  dataTableColumns: LinkedChartTableColumn[]
   tableRows: LinkedChartTableRow[]
   tableMaxHeight: number
   enableTableVirtualScroll: boolean
   tableMinRowHeight: number
   tableScrollX: number
-  getTableRowKey: (row: LinkedChartTableRow) => string | number
+  getTableRowKey: (row: LinkedChartTableRow) => string
 }>()
 </script>
 

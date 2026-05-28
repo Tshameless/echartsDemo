@@ -13,6 +13,8 @@ import type {
 export interface ChartSeriesData {
     name: string
     type: string
+    /** 表格字段名，未传时由 LinkedEcharts 自动生成稳定 field */
+    tableField?: string
     stack?: string
     /** Y轴索引，只有 doubleY 为 true 时生效 */
     yAxisIndex?: number
@@ -40,6 +42,9 @@ export interface AxisLabelConfig {
     fontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number
     showMinLabel?: boolean
     showMaxLabel?: boolean
+    hideOverlap?: boolean
+    rotate?: number
+    interval?: number | 'auto' | ((index: number, value: string) => boolean)
     formatter?: (value: any, index: number) => string
 }
 

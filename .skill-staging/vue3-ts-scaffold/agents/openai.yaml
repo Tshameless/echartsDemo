@@ -1,0 +1,7 @@
+interface:
+  display_name: "Vue 3 TS Scaffold"
+  short_description: "Initialize Vue 3 TypeScript projects from bundled presets."
+  default_prompt: "Use $vue3-ts-scaffold to initialize a fresh Vue 3 TypeScript project. Default to the admin-element-plus preset unless the user explicitly asks for a minimal non-admin starter."
+
+policy:
+  allow_implicit_invocation: true

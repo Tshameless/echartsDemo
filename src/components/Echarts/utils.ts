@@ -195,9 +195,9 @@ export const calculateCompensateValue = (type: 'start' | 'end', list: Array<stri
 export const defaultTooltipFormatter = (params: any[], item: ChartOptions, isDoubleY = false): string => {
     let result: string
     if (item.xName && item.xName !== '时间' && item.xName !== '日期') {
-        result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}${item.xName}</div>`
+        result = `<div style="margin:2px 0 0 5px; color:#333;padding:6px">${params[0].axisValue}${item.xName}</div>`
     } else {
-        result = `<div style="margin:2px 0 0 5px; color:#fff">${params[0].axisValue}</div>`
+        result = `<div style="margin:2px 0 0 5px; color:#333;padding:6px">${params[0].axisValue}</div>`
     }
     result += params.map((param: any) => {
         let yUnit = ''
@@ -209,7 +209,7 @@ export const defaultTooltipFormatter = (params: any[], item: ChartOptions, isDou
         } else {
             yUnit = item.yName?.includes('：') ? (item.yName.split('：')[1] || '') : (item.yName || '');
         }
-        return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff"><div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>${param.seriesName}：${param.value != null ? param.value : '--'}${yUnit}</div>`
+        return `<div style="display:inline-block;margin:2px 0 0 5px;color:#333;padding:6px"><div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>${param.seriesName}：${param.value != null ? param.value : '--'}${yUnit}</div>`
     }).join('<br>')
     return result
 }

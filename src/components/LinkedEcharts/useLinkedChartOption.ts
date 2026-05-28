@@ -5,14 +5,18 @@ import { calcYAxisMax, calcYAxisMin, escapeHtml } from '@/components/Echarts/uti
 /** 默认图表色板 */
 export const DEFAULT_CHART_COLORS = ['#6677E6', '#46B3E7', '#3379D5', '#6ECDB9', '#999999', '#E5E19A', '#EEEEEE']
 
+type ChartSeriesPoint = NonNullable<ChartOptions['series']>[number]['data'][number]
+
 function getLegendData(item: ChartOptions) {
   return (item.series ?? []).map((series) => series.name)
 }
 
 /** 获取数值 */
-function getNumericValue(value: number | { value: number; name: string } | null | undefined): number | null {
+function getNumericValue(value: ChartSeriesPoint): number | null {
   if (value == null) return null
-  return typeof value === 'object' ? value.value : value
+  if (typeof value === 'number') return value
+  if (typeof value === 'object' && typeof value.value === 'number') return value.value
+  return null
 }
 
 /** 格式化工具提示 */
@@ -103,7 +107,7 @@ export function useLinkedChartOption() {
   /** 获取 ECharts 基础配置 */
   const getBaseOption = (item: ChartOptions) => ({
     animation: false,
-    tooltip:item.tooltip ?? {
+    tooltip: item.tooltip ?? {
       show: item.tooltipShow ?? true,
       trigger: item.tooltipTrigger ?? 'axis',
       backgroundColor: item.tooltipBackgroundColor ?? '#fff',
@@ -172,6 +176,31 @@ export function useLinkedChartOption() {
     ],
   })
 
+  const getFinalYAxis = (item: ChartOptions, axis0Data: number[], axis1Data: number[]) => {
+    let finalYAxis: any = (item.yAxis && !item.doubleY)
+      ? item.yAxis
+      : [
+          createYAxisOption(item, 0, axis1Data),
+          ...(item.doubleY ? [createYAxisOption(item, 1, axis0Data)] : []),
+        ]
+
+    if (item.xAlignValue) {
+      const applyAlign = (yConfig: any, index: number) => ({
+        ...yConfig,
+        max: (v: any) => calcYAxisMax(v),
+        min: (v: any) => calcYAxisMin(v, index === 0 ? axis1Data : axis0Data)
+      })
+
+      if (Array.isArray(finalYAxis)) {
+        finalYAxis = finalYAxis.map(applyAlign)
+      } else if (finalYAxis) {
+        finalYAxis = applyAlign(finalYAxis, 0)
+      }
+    }
+
+    return finalYAxis
+  }
+
   /** 图例选择变化监听 */
   const bindLegendSelectChanged = (chart: eCharts.ECharts, getCurrentItem: () => ChartOptions | undefined) => {
     chart.on('legendselectchanged', (params: any) => {
@@ -183,11 +212,7 @@ export function useLinkedChartOption() {
       const filteredSeries = item.series?.filter((s) => selectedNames.includes(s.name))
       const { axis0Data, axis1Data } = getAxisData(filteredSeries ?? [])
 
-      const yAxis = [
-        createYAxisOption(item, 0, axis1Data),
-        ...(item.doubleY ? [createYAxisOption(item, 1, axis0Data)] : []),
-      ]
-      chart.setOption({ yAxis: (item.yAxis && !item.doubleY) ? item.yAxis : yAxis })
+      chart.setOption({ yAxis: getFinalYAxis(item, axis0Data, axis1Data) })
     })
   }
 
@@ -196,11 +221,7 @@ export function useLinkedChartOption() {
     if (!chart || chart.isDisposed()) return
 
     const { axis0Data, axis1Data } = getAxisData(item.series)
-    const yAxis = [
-      createYAxisOption(item, 0, axis1Data),
-      ...(item.doubleY ? [createYAxisOption(item, 1, axis0Data)] : []),
-    ]
-    const finalYAxis = (item.yAxis && !item.doubleY) ? item.yAxis : yAxis
+    const finalYAxis = getFinalYAxis(item, axis0Data, axis1Data)
 
     // 如果是不合并更新（完整更新），需要重新计算 Y 轴等配置
     if (notMerge) {

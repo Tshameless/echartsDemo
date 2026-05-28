@@ -6,7 +6,6 @@ import {
   ref,
   shallowRef,
   watch,
-  type ComponentPublicInstance,
   type ComputedRef,
 } from 'vue'
 import * as eCharts from 'echarts'
@@ -32,7 +31,7 @@ export function useLinkedChartRuntime({
   onChartReady,
 }: UseLinkedChartRuntimeOptions) {
   const containerRef = ref<HTMLDivElement | null>(null)
-  const boxRefs = ref<HTMLDivElement[]>([])
+  const boxRefs = ref<(HTMLDivElement | null)[]>([])
   const myCharts = shallowRef<(eCharts.ECharts | null)[]>([])
 
   const { updateChartOption, bindLegendSelectChanged } = useLinkedChartOption()
@@ -49,7 +48,13 @@ export function useLinkedChartRuntime({
   let resizeObserver: ResizeObserver | null = null
   let connectedGroupId: string | null = null
 
+  function setContainerRef(el: HTMLDivElement | null) {
+    containerRef.value = el
+  }
 
+  function setBoxRef(el: HTMLDivElement | null, index: number) {
+    boxRefs.value[index] = el
+  }
 
   function cleanupLinkedEcharts() {
     if (connectedGroupId) {
@@ -105,8 +110,15 @@ export function useLinkedChartRuntime({
       }
 
       let chart = myCharts.value[index]
+      const currentDom = chart?.getDom?.()
+      if (chart && !chart.isDisposed() && currentDom !== el) {
+        chart.off('legendselectchanged')
+        chart.dispose()
+        chart = null
+      }
+
       if (!chart || chart.isDisposed()) {
-        chart = eCharts.init(el)
+        chart = eCharts.getInstanceByDom(el) ?? eCharts.init(el)
       }
 
       ;(chart as any).group = groupId
@@ -140,14 +152,25 @@ export function useLinkedChartRuntime({
       resizeObserver = new ResizeObserver(handleResize)
       resizeObserver.observe(containerRef.value, { box: 'border-box' })
     }
+
+    handleResize()
+  }
+
+  function hasChartDomChanged() {
+    return chartList.value.some((_, index) => {
+      const chart = myCharts.value[index]
+      const el = boxRefs.value[index]
+      if (!chart || chart.isDisposed()) return true
+      if (!el) return true
+      return chart.getDom() !== el
+    })
   }
 
   const debouncedUpdate = debounce(() => {
     const list = chartList.value
     if (!list.length) return cleanup()
 
-    // 如果图表数量发生变化，需要重新初始化或清理
-    if (myCharts.value.length !== list.length) {
+    if (myCharts.value.length !== list.length || hasChartDomChanged()) {
       return setupCharts()
     }
 
@@ -186,7 +209,15 @@ export function useLinkedChartRuntime({
 
   // 监听配置变化：只有在配置项引用变化或深度变化时触发
   // 保持 deep: true 但由于使用了 incremental update，性能损耗会显著降低
-  watch(chartList, () => debouncedUpdate(), { deep: true })
+  watch(
+    chartList,
+    () => {
+      nextTick(() => {
+        debouncedUpdate()
+      })
+    },
+    { deep: true, flush: 'post' }
+  )
 
   // 监听模式变化
   watch(() => [getGroupId(), isUnifiedTooltipEnabled()], () => {
@@ -199,10 +230,11 @@ export function useLinkedChartRuntime({
     boxRefs,
     containerRef,
     resizeHandler: handleResize,
+    setBoxRef,
+    setContainerRef,
     unifiedTooltipRef,
     unifiedTooltipData,
     unifiedTooltipStyle,
     unifiedTooltipVisible,
   }
 }
-

@@ -5,7 +5,21 @@
       </lineECharts>
     </div>
     <div class="lineEChartsBox">
-      <lineECharts v-if="Object.keys(eChartsData2).length > 0" :opt="eChartsData2" :height="350"></lineECharts>
+      <lineECharts v-if="Object.keys(eChartsData2).length > 0" :opt="eChartsData2" :height="350">
+        <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
+          <div class="custom-single-table">
+            <div class="table-caption">单图组件自定义表格插槽示例</div>
+            <n-data-table
+              :columns="dataTableColumns"
+              :data="tableRows"
+              :max-height="Number(tableMaxHeight) || 350"
+              size="small"
+              striped
+              bordered
+            />
+          </div>
+        </template>
+      </lineECharts>
     </div>
     <div class="lineEChartsBox">
       <lineECharts v-if="Object.keys(eleEchartsData).length > 0" :opt="eleEchartsData" :height="350" />
@@ -315,7 +329,7 @@ onMounted(() => {
     }
 
     // 修复：xAlignValue 应该是布尔值，visualMap 配置优化
-    const currentIndex = 12
+    const currentIndex: number = 12
     eChartsData3.value = {
       title: '时间',
       timeList: Array.from({ length: 24 }, (_, index) =>
@@ -548,5 +562,16 @@ onMounted(() => {
 
 .lineEChartsBox {
   width: 50%;
+}
+
+.custom-single-table {
+  padding-top: 36px;
+  box-sizing: border-box;
+}
+
+.table-caption {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #e5e7eb;
 }
 </style>

@@ -27,14 +27,28 @@
             </n-text>
           </div>
         </template>
+        <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
+          <div class="custom-linked-table">
+            <div class="table-caption">自定义联动表格渲染：列字段已稳定化，支持 `tableField`。</div>
+            <n-data-table
+              :columns="dataTableColumns"
+              :data="tableRows"
+              :max-height="tableMaxHeight"
+              size="small"
+              striped
+              bordered
+            />
+          </div>
+        </template>
       </LinkedEcharts>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
+import { computed, ref } from 'vue'
 import LinkedEcharts from '@/components/LinkedEcharts/index.vue'
+import type { ChartOptions } from '@/components/Echarts/types'
 
 const selectedDate = ref('2026-01-01')
 const showChartView = ref(true)
@@ -47,7 +61,7 @@ const storagePlanRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.rand
 const storageCmdRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.random() * 100))
 const socRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.random() * 100))
 
-const chartOptions1 = ref({
+const chartOptions1 = ref<ChartOptions>({
   title: '储能运行监测',
   timeList,
   boundaryGap: false,
@@ -57,7 +71,6 @@ const chartOptions1 = ref({
   yName: 'kW',
   xAlignValue: true,
   yName1: '%',
-  group: 'storage-monitor',
   color: ['#5470c6', '#fa8c16', '#9254de', '#52c41a'],
   series: [
     {
@@ -68,6 +81,7 @@ const chartOptions1 = ref({
       yAxisIndex: 0,
       data: [...storagePowerRaw],
       rawData: storagePowerRaw,
+      tableField: 'storageRealtimePower',
       tableUnit: '(kW)'
     },
     {
@@ -78,6 +92,7 @@ const chartOptions1 = ref({
       yAxisIndex: 0,
       data: [...storagePlanRaw],
       rawData: storagePlanRaw,
+      tableField: 'storageSchedulePower',
       tableUnit: '(kW)'
     },
     {
@@ -88,6 +103,7 @@ const chartOptions1 = ref({
       yAxisIndex: 0,
       data: [...storageCmdRaw],
       rawData: storageCmdRaw,
+      tableField: 'storageControlCommand',
       tableUnit: '(kW)'
     },
     {
@@ -98,20 +114,20 @@ const chartOptions1 = ref({
       yAxisIndex: 1,
       data: [...socRaw],
       rawData: socRaw,
+      tableField: 'storageSoc',
       tableUnit: '(%)'
     },
   ],
 })
 
 // 电价信息：单 Y 轴 元/kWh (0~25)
-const chartOptions2 = ref({
+const chartOptions2 = ref<ChartOptions>({
   title: '电价信息',
   timeList,
   boundaryGap: false,
   tooltipShow: false,
   tooltipTrigger: 'axis',
   yName: '元/kWh',
-  group: 'storage-monitor',
   color: ['#ee6666', '#5470c6'],
   series: [
     {
@@ -119,6 +135,7 @@ const chartOptions2 = ref({
       type: 'line',
       symbol: 'none',
       data: [0.8, 0.7, 0.6, 0.5, 0.5, 0.6, 0.8, 1.0, 1.2, 1.3, 1.4, 1.3, 1.2, 0.88, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.3, 1.0],
+      tableField: 'predictedGridPrice',
       tableUnit: '(元/kWh)'
     },
     {
@@ -126,22 +143,20 @@ const chartOptions2 = ref({
       type: 'line',
       symbol: 'none',
       data: [0.75, 0.68, 0.58, 0.52, 0.52, 0.62, 0.82, 1.02, 1.22, 1.28, 1.38, 1.32, 1.22, 0.91, 0.98, 1.12, 1.22, 1.28, 1.38, 1.48, 1.58, 1.48, 1.28, 0.98],
+      tableField: 'actualGridPrice',
       tableUnit: '(元/kWh)'
     },
   ],
-  yMin: 0,
-  yMax: 25,
 })
 
 // 第三个图：单 Y 轴 - 光伏实时功率、光伏实时预测功率
-const chartOptions3 = ref({
+const chartOptions3 = ref<ChartOptions>({
   title: '光伏功率',
   timeList,
   boundaryGap: false,
   tooltipShow: false,
   tooltipTrigger: 'axis',
   yName: 'kW',
-  group: 'storage-monitor',
   color: ['#ee6666', '#5470c6'],
   series: [
     {
@@ -149,6 +164,7 @@ const chartOptions3 = ref({
       type: 'line',
       symbol: 'none',
       data: [0, 0, 0, 0, 5, 8, 12, 18, 25, 30, 35, 38, 39.65, 40, 38, 35, 32, 28, 22, 18, 12, 8, 5, 0],
+      tableField: 'pvRealtimePower',
       tableUnit: '(kW)'
     },
     {
@@ -156,20 +172,20 @@ const chartOptions3 = ref({
       type: 'line',
       symbol: 'none',
       data: [0, 0, 0, 0, 6, 9, 13, 19, 26, 31, 36, 39, 40.33, 41, 39, 36, 33, 29, 23, 19, 13, 9, 6, 0],
+      tableField: 'pvForecastPower',
       tableUnit: '(kW)'
     },
   ],
 })
 
 // 第四个图：单 Y 轴 - 负荷实时功率、负荷控制指令、负荷实时预测功率
-const chartOptions4 = ref({
+const chartOptions4 = ref<ChartOptions>({
   title: '负荷功率',
   timeList,
   boundaryGap: false,
   tooltipShow: false,
   tooltipTrigger: 'axis',
   yName: 'kW',
-  group: 'storage-monitor',
   color: ['#ee6666', '#91cc75', '#5470c6'],
   series: [
     {
@@ -177,6 +193,7 @@ const chartOptions4 = ref({
       type: 'line',
       symbol: 'none',
       data: [30, 32, 35, 38, 40, 38, 35, 39.65, 40, 42, 45, 48, 50, 48, 45, 42, 40, 38, 35, 32, 30, 28, 26, 25],
+      tableField: 'loadRealtimePower',
       tableUnit: '(kW)'
     },
     {
@@ -184,6 +201,7 @@ const chartOptions4 = ref({
       type: 'line',
       symbol: 'none',
       data: [28, 30, 33, 36, 38, 36, 33, 38, 39, 41, 44, 47, 49, 47, 44, 41, 39, 37, 34, 31, 29, 27, 25, 24],
+      tableField: 'loadControlCommand',
       tableUnit: '(kW)'
     },
     {
@@ -191,6 +209,7 @@ const chartOptions4 = ref({
       type: 'line',
       symbol: 'none',
       data: [31, 33, 36, 39, 41, 39, 36, 40.33, 41, 43, 46, 49, 51, 49, 46, 43, 41, 39, 36, 33, 31, 29, 27, 26],
+      tableField: 'loadForecastPower',
       tableUnit: '(kW)'
     },
   ],
@@ -207,7 +226,7 @@ const chartOptionsList = computed(() => [
 ])
 const chartTitles = ['储能运行监测', '电价信息', '光伏功率', '负荷功率']
 
-const handleDateChange = (value) => {
+const handleDateChange = (value: string | number | null) => {
   console.log('当前时间:', value, selectedDate.value)
 }
 </script>
@@ -247,5 +266,15 @@ const handleDateChange = (value) => {
 .per-chart-footer {
   margin-top: 4px;
   text-align: left;
+}
+
+.custom-linked-table {
+  margin-top: 12px;
+}
+
+.table-caption {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #909399;
 }
 </style>

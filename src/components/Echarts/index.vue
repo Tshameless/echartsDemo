@@ -1,25 +1,6 @@
-<template>
-    <div class="chart-container">
-        <!-- 切换开关 -->
-        <n-switch v-model:value="isChartView" :round="false" v-if="showTable" class="chart-switch">
-            <template #checked>图形</template>
-            <template #unchecked>图表</template>
-        </n-switch>
-
-        <div class="clearfix">
-            <!-- 图形渲染器 -->
-            <ChartRenderer v-show="isChartView" ref="rendererRef" :option="finalOption" :height="height"
-                @legend-select-changed="handleLegendChange" />
-
-            <!-- 表格渲染器 -->
-            <DataTableRenderer v-if="!isChartView" :columns="tableHeader" :data="tableData" :height="height" />
-        </div>
-    </div>
-</template>
-
 <script lang="ts" setup>
-import { ref, watch, toRefs, computed, watchEffect } from 'vue'
-import type { ChartOptions } from './types'
+import { computed, ref, toRefs } from 'vue'
+import type { ChartOptions, TableColumn } from './types'
 
 // 导入重构后的组件和 Hooks
 import ChartRenderer from './components/ChartRenderer.vue'
@@ -38,6 +19,14 @@ const props = withDefaults(defineProps<LineChartProps>(), {
     height: 400
 })
 
+defineSlots<{
+    table?(props: {
+        dataTableColumns: TableColumn[]
+        tableRows: Array<Record<string, unknown>>
+        tableMaxHeight: number | string
+    }): any
+}>()
+
 const { opt } = toRefs(props)
 const rendererRef = ref<InstanceType<typeof ChartRenderer>>()
 
@@ -53,7 +42,7 @@ const { showTable, tableData, tableHeader, isChartView } = useChartTable(process
 /** 图例选中状态映射 */
 const selectedLegends = ref<Record<string, boolean>>({})
 
-/** 
+/**
  * 核心配置生成 (Computed)
  * 声明式地根据原始配置、预处理数据和图例选中状态生成最终 Option
  */
@@ -72,17 +61,74 @@ defineExpose({
 })
 </script>
 
+<template>
+    <div class="chart-container">
+        <div v-if="showTable" class="custom-switch">
+            <span :class="['switch-item', { active: isChartView }]" @click="isChartView = true">图</span>
+            <span class="switch-separator">/</span>
+            <span :class="['switch-item', { active: !isChartView }]" @click="isChartView = false">表</span>
+        </div>
+
+        <div class="clearfix">
+            <ChartRenderer
+                v-show="isChartView"
+                ref="rendererRef"
+                :option="finalOption"
+                :height="height"
+                @legend-select-changed="handleLegendChange"
+            />
+
+            <div v-show="!isChartView">
+                <slot
+                    name="table"
+                    v-bind="{ dataTableColumns: tableHeader, tableRows: tableData, tableMaxHeight: height }"
+                >
+                    <DataTableRenderer :columns="tableHeader" :data="tableData" :height="height" />
+                </slot>
+            </div>
+        </div>
+    </div>
+</template>
+
 <style scoped>
 .chart-container {
     position: relative;
     border: 1px solid transparent;
 }
 
-.chart-switch {
+.custom-switch {
     position: absolute;
     right: 20px;
     top: 0px;
     z-index: 9;
+    display: flex;
+    align-items: center;
+    background: #f4f6fa;
+    padding: 2px;
+    border-radius: 4px;
+    font-size: 14px;
+    user-select: none;
+}
+
+.switch-item {
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #909399;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.switch-item.active {
+    background: #ffffff;
+    color: #6e7eee;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.switch-separator {
+    margin: 0 2px;
+    color: #dcdfe6;
+    font-size: 12px;
 }
 
 .clearfix::after {

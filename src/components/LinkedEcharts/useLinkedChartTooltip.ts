@@ -2,7 +2,6 @@ import {
   nextTick,
   ref,
   shallowRef,
-  type ComponentPublicInstance,
   type ComputedRef,
   type ShallowRef,
 } from 'vue'
@@ -18,9 +17,15 @@ import type {
 
 const TOOLTIP_OFFSET = 16
 
+type AxisPointerEvent = {
+  offsetX: number
+  offsetY: number
+  event?: MouseEvent
+}
+
 interface AxisPointerHandler {
   zr: any
-  onMove: (e: any) => void
+  onMove: (e: AxisPointerEvent) => void
   onOut: () => void
 }
 
@@ -77,15 +82,18 @@ export function useLinkedChartTooltip({
       const rows: UnifiedTooltipRow[] = []
       const colors = Array.isArray(opt.color) && opt.color.length ? opt.color : DEFAULT_CHART_COLORS
 
-      opt.series.forEach((s, sIdx) => {
+      opt.series.forEach((s: ChartSeriesData, sIdx: number) => {
         if (!isSeriesActive(chart, s.name)) return
         // 增加对 tooltip: false 的显式支持
         if ((s as any).tooltip === false) return
 
-        const raw = s.data?.[dataIndex]
-        let val = typeof raw === 'object' && raw !== null && 'value' in raw ? raw.value : (raw ?? '--')
+        const rawDataValue =
+          Array.isArray(s.rawData) && dataIndex < s.rawData.length ? s.rawData[dataIndex] : undefined
+        const raw = rawDataValue !== undefined ? rawDataValue : s.data?.[dataIndex]
+        let val = typeof raw === 'object' && raw !== null && 'value' in raw ? raw.value : raw
         // 如果数值是数组（如 K 线图的 [open, close, high, low]），提示框中不显示原始数组字符串
         if (Array.isArray(val)) val = ''
+        if (val == null) val = '--'
         
         const unit = getUnit(s, opt)
         const color = colors[sIdx % colors.length]
@@ -139,11 +147,16 @@ export function useLinkedChartTooltip({
     }
   }
 
-  function showTooltip(e: MouseEvent, axisValue: string, dataIndex: number, hoveredIdx: number) {
+  function showTooltip(
+    pointer: { clientX: number; clientY: number },
+    axisValue: string,
+    dataIndex: number,
+    hoveredIdx: number
+  ) {
     unifiedTooltipData.value = buildData(axisValue, dataIndex, hoveredIdx)
-    updatePosition(e.clientX, e.clientY)
+    updatePosition(pointer.clientX, pointer.clientY)
     unifiedTooltipVisible.value = true
-    nextTick(() => updatePosition(e.clientX, e.clientY))
+    nextTick(() => updatePosition(pointer.clientX, pointer.clientY))
   }
 
   function hideTooltip() {
@@ -170,7 +183,7 @@ export function useLinkedChartTooltip({
       const zr = chart?.getZr()
       if (!zr) return
 
-      const onMove = (e: any) => {
+      const onMove = (e: AxisPointerEvent) => {
         let dataIndex = -1
         try {
           const res = chart!.convertFromPixel('grid', [e.offsetX, e.offsetY])
@@ -185,7 +198,15 @@ export function useLinkedChartTooltip({
         if (dataIndex < 0 || dataIndex >= len) {
           hideTooltip()
         } else {
-          showTooltip(e.event || e, String(timeData[dataIndex]), dataIndex, idx)
+          showTooltip(
+            {
+              clientX: e.event?.clientX ?? e.offsetX,
+              clientY: e.event?.clientY ?? e.offsetY
+            },
+            String(timeData[dataIndex]),
+            dataIndex,
+            idx
+          )
         }
       }
 
@@ -204,4 +225,3 @@ export function useLinkedChartTooltip({
     unifiedTooltipVisible,
   }
 }
-

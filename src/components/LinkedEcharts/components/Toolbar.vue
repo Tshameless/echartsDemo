@@ -25,6 +25,7 @@ const emit = defineEmits<{
           :class="{ active: displayChart }"
           @click="emit('update:displayChart', true)"
         >{{ chartLabel || '图' }}</span>
+        <span class="switch-separator">/</span>
         <span
           class="switch-btn"
           :class="{ active: !displayChart }"
@@ -60,27 +61,37 @@ const emit = defineEmits<{
 }
 
 .chart-table-switch {
-  display: inline-flex;
-  border: 1px solid #dcdfe6;
+  display: flex;
+  align-items: center;
+  background: #f4f6fa;
+  padding: 2px;
   border-radius: 4px;
-  overflow: hidden;
-}
-
-.switch-btn {
-  padding: 6px 16px;
   font-size: 14px;
-  color: #606266;
-  background: #fff;
-  cursor: pointer;
   user-select: none;
 }
 
+.switch-btn {
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #909399;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
 .switch-btn:hover {
-  color: #409eff;
+  color: #6e7eee;
 }
 
 .switch-btn.active {
-  background: #409eff;
-  color: #fff;
+  background: #ffffff;
+  color: #6e7eee;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.switch-separator {
+  margin: 0 2px;
+  color: #dcdfe6;
+  font-size: 12px;
 }
 </style>
