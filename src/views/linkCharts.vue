@@ -3,41 +3,67 @@
     <div class="demo-title">LinkedEcharts 多图联动演示</div>
 
     <div class="charts-container">
-      <LinkedEcharts ref="LinkedEchartsRef" v-if="chartOptionsList.length > 0" v-model:show-chart-view="showChartView"
-        :opts="chartOptionsList" :showTable="true" table-position="bottom" :titles="chartTitles" :height="250"
-        :table-max-height="500" group-id="storage-monitor">
+      <LinkedEcharts
+        v-if="chartOptionsList.length > 0"
+        ref="linkedEchartsRef"
+        v-model:show-chart-view="showChartView"
+        :opts="chartOptionsList"
+        :show-table="true"
+        table-position="bottom"
+        :titles="chartTitles"
+        :height="250"
+        :table-max-height="500"
+        group-id="storage-monitor"
+      >
         <template #header>
           <div class="date-picker-group">
             <span class="date-label">日期：</span>
-            <n-date-picker v-model:formatted-value="selectedDate" value-format="yyyy-MM-dd" type="date" placeholder="选择日期" style="width: 200px" @update:value="handleDateChange" />
+            <el-date-picker
+              v-model="selectedDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="选择日期"
+              style="width: 220px"
+              @change="handleDateChange"
+            />
           </div>
         </template>
         <template #chart-header-left="{ index }">
-          <n-tag type="info" size="tiny" :bordered="false" v-if="index === 0">实时监控</n-tag>
-          <n-tag type="warning" size="tiny" :bordered="false" v-else-if="index === 1">预测分析</n-tag>
-          <n-tag size="tiny" :bordered="false" v-else>辅助数据</n-tag>
+          <el-tag v-if="index === 0" type="primary" size="small" effect="plain">实时监控</el-tag>
+          <el-tag v-else-if="index === 1" type="warning" size="small" effect="plain">预测分析</el-tag>
+          <el-tag v-else size="small" effect="plain">辅助数据</el-tag>
         </template>
-        <template #chart-header-right="{ item }">
-          <n-button size="tiny" quaternary type="primary">配置</n-button>
+        <template #chart-header-right>
+          <el-button size="small" link type="primary">配置</el-button>
         </template>
         <template #chart-footer="{ item }">
           <div class="per-chart-footer">
-            <n-text depth="3" style="font-size: 11px;">
+            <el-text size="small" type="info">
               {{ item.title }} 数据更新于: {{ new Date().toLocaleTimeString() }}
-            </n-text>
+            </el-text>
           </div>
         </template>
         <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
           <div class="custom-linked-table">
             <div class="table-caption">自定义联动表格渲染：列字段已稳定化，支持 `tableField`。</div>
-            <n-data-table
-              :columns="dataTableColumns"
+            <el-table
               :data="tableRows"
               :max-height="tableMaxHeight"
-              size="small"
-              striped
               bordered
-            />
+              stripe
+              style="width: 100%"
+            >
+              <el-table-column
+                v-for="column in dataTableColumns"
+                :key="column.field"
+                :label="column.label"
+                :prop="column.prop"
+                :fixed="column.fixed"
+                :width="column.width"
+                :min-width="column.minWidth"
+                show-overflow-tooltip
+              />
+            </el-table>
           </div>
         </template>
       </LinkedEcharts>
@@ -46,12 +72,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, shallowRef } from 'vue'
 import LinkedEcharts from '@/components/LinkedEcharts/index.vue'
 import type { ChartOptions } from '@/components/Echarts/types'
 
-const selectedDate = ref('2026-01-01')
-const showChartView = ref(true)
+const selectedDate = shallowRef('2026-01-01')
+const showChartView = shallowRef(true)
 
 const timeList = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
 
@@ -61,7 +87,7 @@ const storagePlanRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.rand
 const storageCmdRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.random() * 100))
 const socRaw = Array.from({ length: 24 }).map(() => Math.floor(Math.random() * 100))
 
-const chartOptions1 = ref<ChartOptions>({
+const chartOptions1 = shallowRef<ChartOptions>({
   title: '储能运行监测',
   timeList,
   boundaryGap: false,
@@ -121,7 +147,7 @@ const chartOptions1 = ref<ChartOptions>({
 })
 
 // 电价信息：单 Y 轴 元/kWh (0~25)
-const chartOptions2 = ref<ChartOptions>({
+const chartOptions2 = shallowRef<ChartOptions>({
   title: '电价信息',
   timeList,
   boundaryGap: false,
@@ -150,7 +176,7 @@ const chartOptions2 = ref<ChartOptions>({
 })
 
 // 第三个图：单 Y 轴 - 光伏实时功率、光伏实时预测功率
-const chartOptions3 = ref<ChartOptions>({
+const chartOptions3 = shallowRef<ChartOptions>({
   title: '光伏功率',
   timeList,
   boundaryGap: false,
@@ -179,7 +205,7 @@ const chartOptions3 = ref<ChartOptions>({
 })
 
 // 第四个图：单 Y 轴 - 负荷实时功率、负荷控制指令、负荷实时预测功率
-const chartOptions4 = ref<ChartOptions>({
+const chartOptions4 = shallowRef<ChartOptions>({
   title: '负荷功率',
   timeList,
   boundaryGap: false,
@@ -215,7 +241,7 @@ const chartOptions4 = ref<ChartOptions>({
   ],
 })
 
-const LinkedEchartsRef = ref(null)
+const linkedEchartsRef = shallowRef<InstanceType<typeof LinkedEcharts> | null>(null)
 
 // 多图联动：一次传入所有图表配置与标题
 const chartOptionsList = computed(() => [
@@ -226,7 +252,7 @@ const chartOptionsList = computed(() => [
 ])
 const chartTitles = ['储能运行监测', '电价信息', '光伏功率', '负荷功率']
 
-const handleDateChange = (value: string | number | null) => {
+const handleDateChange = (value: string | null) => {
   console.log('当前时间:', value, selectedDate.value)
 }
 </script>

@@ -38,6 +38,7 @@ export function useLinkedChartDisplay({
   onUpdateShowChartView
 }: UseLinkedChartDisplayOptions) {
   const localShowChartView = shallowRef(true)
+  const hasWarnedTimeMismatch = shallowRef(false)
 
   const chartList = computed(() => {
     if (props.opts?.length) return props.opts
@@ -75,6 +76,19 @@ export function useLinkedChartDisplay({
     if (list.length === 0) return { timeList: [], series: [] }
 
     const timeList = list[0]?.timeList || []
+    const baseTimeLength = timeList.length
+
+    if (
+      import.meta.env.DEV &&
+      !hasWarnedTimeMismatch.value &&
+      list.some((item) => (item?.timeList?.length ?? 0) !== baseTimeLength)
+    ) {
+      hasWarnedTimeMismatch.value = true
+      console.warn(
+        '[LinkedEcharts] Detected inconsistent timeList lengths across linked charts. Normalize time axes at the page layer for best results.'
+      )
+    }
+
     const usedFields = new Set<string>([LINKED_CHART_TIME_FIELD])
     const series = list.flatMap((opt, chartIndex) =>
       (opt?.series || []).map((s, seriesIndex) => {
@@ -91,7 +105,7 @@ export function useLinkedChartDisplay({
 
         return {
           field,
-          name: s.name,
+          label: s.name,
           unit: s.tableUnit,
           data: s.rawData ?? (s.data || []).map((d) => getTableCellValue(d) ?? null)
         }
@@ -104,16 +118,17 @@ export function useLinkedChartDisplay({
   /** 表格列定义 */
   const dataTableColumns = computed<LinkedChartTableColumn[]>(() => [
     {
-      title: props.timeColumnTitle || '时间',
-      key: LINKED_CHART_TIME_FIELD,
+      label: props.timeColumnTitle || '时间',
+      field: LINKED_CHART_TIME_FIELD,
+      prop: LINKED_CHART_TIME_FIELD,
       fixed: 'left' as const,
-      width: 120,
+      width: 140,
     },
     ...flatSeriesData.value.series.map((s) => ({
-      title: s.name,
-      key: s.field,
-      minWidth: 120,
-      ellipsis: { tooltip: true },
+      label: s.label,
+      field: s.field,
+      prop: s.field,
+      minWidth: 140,
     })),
   ])
 

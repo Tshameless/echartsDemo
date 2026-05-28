@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { LinkedChartTableColumn, LinkedChartTableRow } from '../types'
 
-defineProps<{
+const props = defineProps<{
   dataTableColumns: LinkedChartTableColumn[]
   tableRows: LinkedChartTableRow[]
   tableMaxHeight: number
@@ -10,26 +11,40 @@ defineProps<{
   tableScrollX: number
   getTableRowKey: (row: LinkedChartTableRow) => string
 }>()
+
+const tableStyle = computed(() => ({
+  minWidth: `${props.tableScrollX || 1200}px`,
+}))
 </script>
 
 <template>
   <div class="table-content">
-    <n-data-table
-      :columns="dataTableColumns"
+    <el-table
       :data="tableRows"
       :max-height="tableMaxHeight"
-      :virtual-scroll="enableTableVirtualScroll"
-      :min-row-height="tableMinRowHeight || 39"
       :row-key="getTableRowKey"
-      :scroll-x="tableScrollX || 1200"
-      striped
-      bordered
-    />
+      border
+      stripe
+      class="linked-data-table"
+      :style="tableStyle"
+    >
+      <el-table-column
+        v-for="column in dataTableColumns"
+        :key="column.field"
+        :label="column.label"
+        :prop="column.prop"
+        :fixed="column.fixed"
+        :width="column.width"
+        :min-width="column.minWidth"
+        show-overflow-tooltip
+      />
+    </el-table>
   </div>
 </template>
 
 <style scoped>
 .table-content {
   margin-top: 12px;
+  overflow-x: auto;
 }
 </style>

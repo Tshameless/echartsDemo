@@ -1,34 +1,29 @@
-<template>
-  <div class="table-container" :style="{ height: containerHeight, paddingTop: '36px', boxSizing: 'border-box' }">
-    <n-data-table class="chart-table" :single-line="false" :columns="columns" :data="data"
-      :style="tableStyle" flex-height
-      :virtual-scroll="true" striped />
-  </div>
-</template>
-
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { TableColumn } from '../types'
+import type { ChartTableRow, TableColumn } from '../types'
 
-const props = defineProps<{
+defineProps<{
   columns: TableColumn[]
-  data: Array<Record<string, unknown>>
+  data: ChartTableRow[]
   height: number | string
 }>()
-
-const containerHeight = computed(() => {
-  return typeof props.height === 'number' ? `${props.height}px` : props.height
-})
-
-const tableMaxHeight = computed(() => {
-  const h = Number(props.height)
-  return isNaN(h) ? undefined : h - 36
-})
-
-const tableStyle = computed(() => {
-  return tableMaxHeight.value ? { height: `${tableMaxHeight.value}px` } : { height: '100%' }
-})
 </script>
+
+<template>
+  <div class="table-container">
+    <el-table :data="data" :max-height="height" border stripe class="chart-table" style="width: 100%">
+      <el-table-column
+        v-for="column in columns"
+        :key="column.field"
+        :label="column.label"
+        :prop="column.prop"
+        :fixed="column.fixed"
+        :width="column.width"
+        :min-width="column.minWidth"
+        show-overflow-tooltip
+      />
+    </el-table>
+  </div>
+</template>
 
 <style scoped>
 .table-container {

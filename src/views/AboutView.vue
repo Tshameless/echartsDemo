@@ -1,66 +1,85 @@
 <template>
   <div class="container" id="home-root">
     <div class="lineEChartsBox">
-      <lineECharts v-if="Object.keys(eChartsDataSpecial).length > 0" :opt="eChartsDataSpecial" :height="350">
-      </lineECharts>
+      <LineECharts v-if="Object.keys(eChartsDataSpecial).length > 0" :opt="eChartsDataSpecial" :height="350" />
     </div>
     <div class="lineEChartsBox">
-      <lineECharts v-if="Object.keys(eChartsData2).length > 0" :opt="eChartsData2" :height="350">
+      <LineECharts v-if="Object.keys(eChartsData2).length > 0" :opt="eChartsData2" :height="350">
         <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
           <div class="custom-single-table">
             <div class="table-caption">单图组件自定义表格插槽示例</div>
-            <n-data-table
-              :columns="dataTableColumns"
+            <el-table
               :data="tableRows"
               :max-height="Number(tableMaxHeight) || 350"
-              size="small"
-              striped
               bordered
-            />
+              stripe
+              style="width: 100%"
+            >
+              <el-table-column
+                v-for="column in dataTableColumns"
+                :key="column.field"
+                :label="column.label"
+                :prop="column.prop"
+                :fixed="column.fixed"
+                :width="column.width"
+                :min-width="column.minWidth"
+                show-overflow-tooltip
+              />
+            </el-table>
           </div>
         </template>
-      </lineECharts>
+      </LineECharts>
     </div>
     <div class="lineEChartsBox">
-      <lineECharts v-if="Object.keys(eleEchartsData).length > 0" :opt="eleEchartsData" :height="350" />
+      <LineECharts
+        v-if="Object.keys(eleEchartsData).length > 0"
+        :opt="eleEchartsData"
+        :height="350"
+        table-position="bottom"
+        :show-table="true"
+      />
     </div>
     <div class="lineEChartsBox">
-      <lineECharts v-if="Object.keys(eChartsData).length > 0" :opt="eChartsData" :height="350"></lineECharts>
+      <LineECharts v-if="Object.keys(eChartsData).length > 0" :opt="eChartsData" :height="350" />
     </div>
     <div class="lineEChartsBox">
-      <lineECharts v-if="Object.keys(eChartsData3).length > 0" :opt="eChartsData3" :height="350"></lineECharts>
+      <LineECharts v-if="Object.keys(eChartsData3).length > 0" :opt="eChartsData3" :height="350" />
     </div>
 
     <div class="lineEChartsBox">
-      <lineECharts ref="chartRef" v-if="Object.keys(eChartsData4).length > 0" :opt="eChartsData4" :height="350">
-      </lineECharts>
+      <LineECharts
+        v-if="Object.keys(eChartsData4).length > 0"
+        ref="chartRef"
+        :opt="eChartsData4"
+        :height="350"
+      />
     </div>
     <div class="lineEChartsBox">
-      <lineECharts v-if="Object.keys(eChartsData5).length > 0" :opt="eChartsData5" :height="350"></lineECharts>
+      <LineECharts v-if="Object.keys(eChartsData5).length > 0" :opt="eChartsData5" :height="350" />
     </div>
-    <div class="lineEChartsBox" style="border: 1px  solid red;">
-      <lineECharts v-if="Object.keys(powerConsumptionOpt).length > 0" :opt="powerConsumptionOpt" class="chart-canvas"
+    <div class="lineEChartsBox box-highlight">
+      <LineECharts v-if="Object.keys(powerConsumptionOpt).length > 0" :opt="powerConsumptionOpt" class="chart-canvas"
         :height="170" />
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from "vue"
-import lineECharts from "../components/Echarts/index.vue"
+import { nextTick, onMounted, shallowRef } from 'vue'
+import LineECharts from '../components/Echarts/index.vue'
 import usePowerIcon from '../assets/img/usePowerIcon.png';
 import dayjs from "dayjs"
 
-const eChartsData = ref({})
-const eChartsData2 = ref({})
-const eChartsDataSpecial = ref({})
-const eChartsData3 = ref({})
-const eChartsData4 = ref({})
-const eChartsData5 = ref({})
-const eleEchartsData = ref({})
-let resizeObserver = null
-const powerConsumptionOpt = ref<any>({})
+const eChartsData = shallowRef({})
+const eChartsData2 = shallowRef({})
+const eChartsDataSpecial = shallowRef({})
+const eChartsData3 = shallowRef({})
+const eChartsData4 = shallowRef({})
+const eChartsData5 = shallowRef({})
+const eleEchartsData = shallowRef({})
+let resizeObserver: ResizeObserver | null = null
+const powerConsumptionOpt = shallowRef<any>({})
 
-const chartRef = ref()
+const chartRef = shallowRef<InstanceType<typeof LineECharts> | null>(null)
 
 const getDonutOption = (colors: string[], data: any[], icon: any, unit: string = '(kWh)') => {
   const total = data[0].value;
@@ -534,7 +553,7 @@ onMounted(() => {
     const mainContent = document.getElementById('home-root')
     if (mainContent) {
       resizeObserver = new window.ResizeObserver(() => {
-        chartRef.value?.resizeHandler && chartRef.value.resizeHandler()
+        chartRef.value?.resizeHandler?.()
       })
       resizeObserver.observe(mainContent)
     }
@@ -562,6 +581,10 @@ onMounted(() => {
 
 .lineEChartsBox {
   width: 50%;
+}
+
+.box-highlight {
+  border: 1px solid red;
 }
 
 .custom-single-table {

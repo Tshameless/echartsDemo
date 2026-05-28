@@ -1,74 +1,91 @@
-import { ref, computed, type Ref } from 'vue'
-import type { ChartOptions, TableColumn } from './types'
+import { computed, shallowRef, type Ref } from 'vue'
+import type { ChartOptions, ChartSeriesData, ChartTableRow, TableColumn } from './types'
 
-type ChartTableRow = {
-    timeList: string | number
-    [key: string]: unknown
+export const CHART_TIME_FIELD = 'time'
+
+function getTableCellValue(value: ChartSeriesData['data'][number] | number | null | undefined) {
+  if (typeof value === 'object' && value !== null && 'value' in value) {
+    return value.value
+  }
+  return value
 }
 
-/**
- * 专门处理表格逻辑的 Hook
- * 优化点：废除冗余的 ref/watch 与手动刷新机制，使用 computed 惰性派生状态
- */
-export function useChartTable(opt: Ref<ChartOptions>) {
-    // 视图切换状态（图表 / 表格），由内部组件 v-model 驱动，因此保留 ref
-    const isChartView = ref(true)
+function buildFallbackTableField(seriesIndex: number) {
+  return `series_${seriesIndex}`
+}
 
-    // 是否显示图表/表格切换开关
-    const showTable = computed(() => {
-        return opt.value.showTable !== undefined ? opt.value.showTable : false
+export function useChartTable(opt: Ref<ChartOptions>, timeColumnTitle: Ref<string>) {
+  const localShowChartView = shallowRef(true)
+
+  const canShowTable = computed(() => opt.value.showTable ?? false)
+
+  const tableHeader = computed<TableColumn[]>(() => {
+    const usedFields = new Set<string>([CHART_TIME_FIELD])
+    const columns: TableColumn[] = [
+      {
+        label: timeColumnTitle.value || '时间',
+        field: CHART_TIME_FIELD,
+        prop: CHART_TIME_FIELD,
+        fixed: 'left',
+        width: 140,
+      },
+    ]
+
+    opt.value.series?.forEach((series, index) => {
+      const preferredField = series.tableField?.trim() || buildFallbackTableField(index)
+      let field = preferredField
+      let duplicateIndex = 1
+
+      while (usedFields.has(field)) {
+        field = `${preferredField}_${duplicateIndex}`
+        duplicateIndex += 1
+      }
+
+      usedFields.add(field)
+
+      columns.push({
+        label: series.tableUnit ? `${series.name}${series.tableUnit}` : series.name,
+        field,
+        prop: field,
+        minWidth: 140,
+      })
     })
 
-    // 派生表头配置
-    const tableHeader = computed<TableColumn[]>(() => {
-        const item = opt.value
-        
-        const header: TableColumn[] = [{
-            title: item.title || '时间',
-            key: 'timeList',
-        }]
+    return columns
+  })
 
-        item.series?.forEach(({ name, tableUnit }) => {
-            const updatedName = tableUnit ? `${name}${tableUnit}` : name
-            header.push({
-                title: updatedName,
-                key: name,
-            })
-        })
+  const tableData = computed<ChartTableRow[]>(() => {
+    const timeList = opt.value.timeList ?? []
+    const rows = timeList.map((time, index) => ({
+      __rowKey: `${String(time)}-${index}`,
+      [CHART_TIME_FIELD]: time,
+    })) as ChartTableRow[]
 
-        return header
+    opt.value.series?.forEach((series, seriesIndex) => {
+      const column = tableHeader.value[seriesIndex + 1]
+      if (!column) return
+
+      ;(series.rawData ?? series.data ?? []).forEach((value, index) => {
+        if (!rows[index]) return
+        rows[index][column.field] = getTableCellValue(value) ?? '--'
+      })
     })
 
-    // 派生表格数据
-    const tableData = computed<ChartTableRow[]>(() => {
-        const item = opt.value
-        
-        // 构建时间列基础数据
-        const data: ChartTableRow[] = item.timeList?.map(time => ({ timeList: time })) || []
+    if (opt.value.deleteLastPoint) rows.pop()
+    else if (opt.value.deleteFirstPoint) rows.shift()
 
-        // 填充各个系列的值
-        item.series?.forEach(({ name, data: seriesData }) => {
-            seriesData.forEach((val, idx) => {
-                if (data[idx]) {
-                    data[idx][name] = val
-                }
-            })
-        })
+    return rows
+  })
 
-        // 处理首尾点删除逻辑
-        if (item.deleteLastPoint) {
-            data.pop()
-        } else if (item.deleteFirstPoint) {
-            data.shift()
-        }
-        
-        return data
-    })
+  function setChartView(value: boolean) {
+    localShowChartView.value = value
+  }
 
-    return {
-        showTable,
-        tableData,
-        tableHeader,
-        isChartView
-    }
+  return {
+    canShowTable,
+    setChartView,
+    showChartView: localShowChartView,
+    tableData,
+    tableHeader,
+  }
 }

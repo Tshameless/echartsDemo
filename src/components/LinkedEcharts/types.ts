@@ -1,5 +1,5 @@
 import type * as eCharts from 'echarts'
-import type { ChartOptions } from '@/components/Echarts/types'
+import type { ChartOptions, TableColumn } from '@/components/Echarts/types'
 
 export const LINKED_CHART_TIME_FIELD = 'time'
 
@@ -26,14 +26,7 @@ export interface LinkedChartRenderItem {
   title: string
 }
 
-export interface LinkedChartTableColumn {
-  title: string
-  key: string
-  fixed?: 'left' | 'right'
-  width?: number
-  minWidth?: number
-  ellipsis?: { tooltip: boolean }
-}
+export type LinkedChartTableColumn = TableColumn
 
 export interface LinkedChartTableRow {
   __rowKey: string

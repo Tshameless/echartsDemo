@@ -3,7 +3,7 @@ import type * as eCharts from 'echarts'
 
 export function useChartResize(
     chartInstance: Ref<eCharts.ECharts | null>,
-    domRef: Ref<HTMLElement | undefined>
+    domRef: Ref<HTMLElement | null | undefined>
 ) {
     let observer: ResizeObserver | null = null
 
