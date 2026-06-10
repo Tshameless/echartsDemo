@@ -46,7 +46,6 @@ export interface AxisLabelConfig {
   showMaxLabel?: boolean
   hideOverlap?: boolean
   rotate?: number
-  interval?: number | 'auto' | ((index: number, value: string) => boolean)
   formatter?: (value: any, index: number) => string
 }
 
