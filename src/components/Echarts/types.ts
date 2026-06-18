@@ -53,7 +53,7 @@ export interface AxisLabelConfig {
 export interface TableColumn {
   label: string
   field: string
-  prop: string
+  prop?: string
   fixed?: 'left' | 'right'
   width?: number
   minWidth?: number

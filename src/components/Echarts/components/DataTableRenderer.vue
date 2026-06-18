@@ -22,7 +22,6 @@ const resolvedColumns = computed<TableColumn[]>(() => {
   const extraColumn: TableColumn = {
     label: props.extraLabel,
     field: props.extraField,
-    prop: props.extraField,
     minWidth: 140,
   }
 
@@ -62,7 +61,7 @@ const resolvedData = computed<ChartTableRow[]>(() => {
       v-for="column in resolvedColumns"
       :key="column.field"
       :label="column.label"
-      :prop="column.prop"
+      :prop="column.prop ?? column.field"
       :fixed="column.fixed"
       :width="column.width"
       :min-width="column.minWidth"

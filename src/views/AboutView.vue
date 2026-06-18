@@ -133,20 +133,17 @@ const customQweTableColumns: TableColumn[] = [
   {
     label: 'Q',
     field: 'q',
-    prop: 'q',
     fixed: 'left',
     width: 140,
   },
   {
     label: 'W',
     field: 'w',
-    prop: 'w',
     minWidth: 140,
   },
   {
     label: 'E',
     field: 'e',
-    prop: 'e',
     minWidth: 140,
   },
 ]

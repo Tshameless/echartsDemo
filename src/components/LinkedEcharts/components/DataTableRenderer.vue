@@ -32,7 +32,7 @@ const tableStyle = computed(() => ({
         v-for="column in dataTableColumns"
         :key="column.field"
         :label="column.label"
-        :prop="column.prop"
+        :prop="column.prop ?? column.field"
         :fixed="column.fixed"
         :width="column.width"
         :min-width="column.minWidth"
