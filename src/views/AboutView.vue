@@ -550,6 +550,7 @@ onMounted(() => {
           type: 'line',
           smooth: true,
           yAxisIndex: 0,
+          rawData:[1,2,3,4,5,6] //自定义单列表格数据
         },
         {
           name: 'SOC',
