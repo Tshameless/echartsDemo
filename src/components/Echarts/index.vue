@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef, toRef } from 'vue'
+import { computed, shallowRef, toRef, watch } from 'vue'
 import type {
   ChartTableRow,
   EchartsProps,
@@ -44,6 +44,7 @@ const timeColumnTitle = toRef(props, 'timeColumnTitle')
 const rendererRef = shallowRef<InstanceType<typeof ChartRenderer> | null>(null)
 const selectedLegends = shallowRef<Record<string, boolean>>({})
 const localShowChartView = shallowRef(true)
+const hasMountedTableContent = shallowRef(false)
 
 const { processedOpt } = useProcessedData(optRef)
 const { getFinalOption } = useChartOption()
@@ -61,6 +62,9 @@ const displayChart = computed(() => {
 const shouldShowChartContent = computed(() => displayChart.value)
 const shouldShowTableContent = computed(
   () => canShowTable.value && (isBottomTableMode.value || !displayChart.value)
+)
+const shouldMountTableContent = computed(
+  () => canShowTable.value && (isBottomTableMode.value || hasMountedTableContent.value)
 )
 
 const resolvedTableMaxHeight = computed(() => props.tableMaxHeight ?? props.height)
@@ -85,6 +89,16 @@ function setChartView(value: boolean) {
 
   localShowChartView.value = value
 }
+
+watch(
+  shouldShowTableContent,
+  (value) => {
+    if (value) {
+      hasMountedTableContent.value = true
+    }
+  },
+  { immediate: true }
+)
 
 defineExpose({
   resizeHandler: () => rendererRef.value?.resize(),
@@ -124,17 +138,19 @@ defineExpose({
       />
     </div>
 
-    <div v-if="shouldShowTableContent" class="table-content">
-      <slot
-        name="table"
-        v-bind="{ dataTableColumns: tableHeader, tableRows: tableData, tableMaxHeight: resolvedTableMaxHeight }"
-      >
-        <DataTableRenderer
-          :columns="tableHeader"
-          :data="tableData"
-          :height="resolvedTableMaxHeight"
-        />
-      </slot>
+    <div v-if="shouldMountTableContent" v-show="shouldShowTableContent" class="table-content">
+      <div class="table-body">
+        <slot
+          name="table"
+          v-bind="{ dataTableColumns: tableHeader, tableRows: tableData, tableMaxHeight: resolvedTableMaxHeight }"
+        >
+          <DataTableRenderer
+            :columns="tableHeader"
+            :data="tableData"
+            :height="resolvedTableMaxHeight"
+          />
+        </slot>
+      </div>
     </div>
 
     <div class="echarts-footer">
@@ -154,6 +170,11 @@ defineExpose({
 
 .table-content {
   margin-top: 12px;
+}
+
+.table-body {
+  width: calc(100% - 88px);
+  margin: 0 auto;
 }
 
 .echarts-footer {

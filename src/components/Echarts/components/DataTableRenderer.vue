@@ -9,28 +9,21 @@ defineProps<{
 </script>
 
 <template>
-  <div class="table-container">
-    <el-table :data="data" :max-height="height" border stripe class="chart-table" style="width: 100%">
-      <el-table-column
-        v-for="column in columns"
-        :key="column.field"
-        :label="column.label"
-        :prop="column.prop"
-        :fixed="column.fixed"
-        :width="column.width"
-        :min-width="column.minWidth"
-        show-overflow-tooltip
-      />
-    </el-table>
-  </div>
+  <el-table :data="data" :max-height="height" border stripe class="chart-table" style="width: 100%">
+    <el-table-column
+      v-for="column in columns"
+      :key="column.field"
+      :label="column.label"
+      :prop="column.prop"
+      :fixed="column.fixed"
+      :width="column.width"
+      :min-width="column.minWidth"
+      show-overflow-tooltip
+    />
+  </el-table>
 </template>
 
 <style scoped>
-.table-container {
-  width: calc(100% - 88px);;
-  margin: 0 auto;
-}
-
 .chart-table {
   width: 100%;
 }

@@ -11,18 +11,25 @@
         table-mode="switch"
       >
         <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
-          <div
-            class="custom-single-table"
-            :style="{ height: typeof tableMaxHeight === 'number' ? `${tableMaxHeight}px` : tableMaxHeight }"
+          <el-table
+            :data="buildInsertedTableRows(tableRows)"
+            row-key="__rowKey"
+            :max-height="tableMaxHeight"
+            border
+            stripe
+            style="width: 100%"
           >
-            <div class="table-caption">单图组件自定义表格插槽示例</div>
-            <DataTableRenderer
-              class="custom-single-table-renderer"
-              :columns="dataTableColumns"
-              :data="tableRows"
-              height="100%"
+            <el-table-column
+              v-for="column in buildInsertedTableColumns(dataTableColumns)"
+              :key="column.field"
+              :label="column.label"
+              :prop="column.prop"
+              :fixed="column.fixed"
+              :width="column.width"
+              :min-width="column.minWidth"
+              show-overflow-tooltip
             />
-          </div>
+          </el-table>
         </template>
       </LineECharts>
     </div>
@@ -40,7 +47,29 @@
         :opt="eChartsData"
         :height="350"
         table-mode="switch"
-      />
+      >
+        <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
+          <el-table
+            :data="buildAppendedTableRows(tableRows)"
+            row-key="__rowKey"
+            :max-height="tableMaxHeight"
+            border
+            stripe
+            style="width: 100%"
+          >
+            <el-table-column
+              v-for="column in buildAppendedTableColumns(dataTableColumns)"
+              :key="column.field"
+              :label="column.label"
+              :prop="column.prop"
+              :fixed="column.fixed"
+              :width="column.width"
+              :min-width="column.minWidth"
+              show-overflow-tooltip
+            />
+          </el-table>
+        </template>
+      </LineECharts>
     </div>
     <div class="lineEChartsBox">
       <LineECharts
@@ -48,7 +77,11 @@
         :opt="eChartsData3"
         :height="350"
         table-mode="switch"
-      />
+      >
+        <template #header-left>
+          <div class="table-caption">单图组件自定义表格插槽示例-只需要表头</div>
+        </template>
+      </LineECharts>
     </div>
 
     <div class="lineEChartsBox">
@@ -58,7 +91,11 @@
         :opt="eChartsData4"
         :height="350"
         table-mode="switch"
-      />
+            >
+        <template #header-right>
+          <div class="table-caption">单图组件自定义表格插槽示例-只需要表头</div>
+        </template>
+      </LineECharts>
     </div>
     <div class="lineEChartsBox">
       <LineECharts
@@ -77,7 +114,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, shallowRef } from 'vue'
 import LineECharts from '../components/Echarts/index.vue'
-import DataTableRenderer from '../components/Echarts/components/DataTableRenderer.vue'
+import type { ChartTableRow, TableColumn } from '../components/Echarts/types'
 import usePowerIcon from '../assets/img/usePowerIcon.png';
 import dayjs from "dayjs"
 
@@ -92,6 +129,77 @@ let resizeObserver: ResizeObserver | null = null
 const powerConsumptionOpt = shallowRef<any>({})
 
 const chartRef = shallowRef<InstanceType<typeof LineECharts> | null>(null)
+const INSERTED_FIELD = 'custom_inserted_column'
+const APPENDED_FIELD = 'custom_appended_column'
+const insertedColumnsCache = new WeakMap<TableColumn[], TableColumn[]>()
+const insertedRowsCache = new WeakMap<ChartTableRow[], ChartTableRow[]>()
+const appendedColumnsCache = new WeakMap<TableColumn[], TableColumn[]>()
+const appendedRowsCache = new WeakMap<ChartTableRow[], ChartTableRow[]>()
+
+function buildInsertedTableColumns(columns: TableColumn[]) {
+  const cachedColumns = insertedColumnsCache.get(columns)
+  if (cachedColumns) return cachedColumns
+
+  const [timeColumn, ...dataColumns] = columns
+  const insertedColumn: TableColumn = {
+    label: 'E',
+    field: INSERTED_FIELD,
+    prop: INSERTED_FIELD,
+    minWidth: 140,
+  }
+
+  const nextColumns =
+    !timeColumn
+      ? [insertedColumn]
+      : dataColumns.length === 0
+        ? [timeColumn, insertedColumn]
+        : [timeColumn, insertedColumn, ...dataColumns]
+
+  insertedColumnsCache.set(columns, nextColumns)
+  return nextColumns
+}
+
+function buildInsertedTableRows(rows: ChartTableRow[]) {
+  const cachedRows = insertedRowsCache.get(rows)
+  if (cachedRows) return cachedRows
+
+  const nextRows = rows.map((row, index) => ({
+    ...row,
+    [INSERTED_FIELD]: `e-${index + 1}`,
+  }))
+
+  insertedRowsCache.set(rows, nextRows)
+  return nextRows
+}
+
+function buildAppendedTableColumns(columns: TableColumn[]) {
+  const cachedColumns = appendedColumnsCache.get(columns)
+  if (cachedColumns) return cachedColumns
+
+  const appendedColumn: TableColumn = {
+    label: 'D',
+    field: APPENDED_FIELD,
+    prop: APPENDED_FIELD,
+    minWidth: 140,
+  }
+
+  const nextColumns = [...columns, appendedColumn]
+  appendedColumnsCache.set(columns, nextColumns)
+  return nextColumns
+}
+
+function buildAppendedTableRows(rows: ChartTableRow[]) {
+  const cachedRows = appendedRowsCache.get(rows)
+  if (cachedRows) return cachedRows
+
+  const nextRows = rows.map((row, index) => ({
+    ...row,
+    [APPENDED_FIELD]: `d-${index + 1}`,
+  }))
+
+  appendedRowsCache.set(rows, nextRows)
+  return nextRows
+}
 
 const getDonutOption = (colors: string[], data: any[], icon: any, unit: string = '(kWh)') => {
   const total = data[0].value;
@@ -594,25 +702,4 @@ onMounted(() => {
   border: 1px solid red;
 }
 
-.custom-single-table {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-  box-sizing: border-box;
-}
-
-.custom-single-table-renderer {
-  flex: 1;
-  min-height: 0;
-}
-
-.table-caption {
-  width: calc(100% - 88px);
-  margin: 0 auto;
-  line-height: 20px;
-  flex-shrink: 0;
-  font-size: 12px;
-  color: #e5e7eb;
-}
 </style>
