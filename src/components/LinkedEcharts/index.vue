@@ -16,7 +16,7 @@ import UnifiedTooltipRenderer from './components/UnifiedTooltipRenderer.vue'
 
 const props = withDefaults(defineProps<LinkedEchartsProps>(), {
   groupId: '',
-  tablePosition: 'switch',
+  tableMode: 'none',
   tableMaxHeight: 500,
   tableScrollX: 1200,
   tableMinRowHeight: 39,

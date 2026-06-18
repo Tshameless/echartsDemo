@@ -1,4 +1,4 @@
-import { computed, shallowRef, type Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import type { ChartOptions, ChartSeriesData, ChartTableRow, TableColumn } from './types'
 
 export const CHART_TIME_FIELD = 'time'
@@ -15,10 +15,6 @@ function buildFallbackTableField(seriesIndex: number) {
 }
 
 export function useChartTable(opt: Ref<ChartOptions>, timeColumnTitle: Ref<string>) {
-  const localShowChartView = shallowRef(true)
-
-  const canShowTable = computed(() => opt.value.showTable ?? false)
-
   const tableHeader = computed<TableColumn[]>(() => {
     const usedFields = new Set<string>([CHART_TIME_FIELD])
     const columns: TableColumn[] = [
@@ -77,14 +73,7 @@ export function useChartTable(opt: Ref<ChartOptions>, timeColumnTitle: Ref<strin
     return rows
   })
 
-  function setChartView(value: boolean) {
-    localShowChartView.value = value
-  }
-
   return {
-    canShowTable,
-    setChartView,
-    showChartView: localShowChartView,
     tableData,
     tableHeader,
   }

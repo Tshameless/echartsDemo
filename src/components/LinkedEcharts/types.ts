@@ -1,5 +1,5 @@
 import type * as eCharts from 'echarts'
-import type { ChartOptions, TableColumn } from '@/components/Echarts/types'
+import type { ChartOptions, TableColumn, TableMode } from '@/components/Echarts/types'
 
 export const LINKED_CHART_TIME_FIELD = 'time'
 
@@ -9,8 +9,7 @@ export interface LinkedEchartsProps {
   titles?: string[]
   height: number
   groupId?: string
-  showTable?: boolean
-  tablePosition?: 'switch' | 'bottom'
+  tableMode?: TableMode
   showChartView?: boolean
   tableMaxHeight?: number
   tableScrollX?: number

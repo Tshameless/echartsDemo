@@ -4,7 +4,12 @@
       <LineECharts v-if="Object.keys(eChartsDataSpecial).length > 0" :opt="eChartsDataSpecial" :height="350" />
     </div>
     <div class="lineEChartsBox">
-      <LineECharts v-if="Object.keys(eChartsData2).length > 0" :opt="eChartsData2" :height="350">
+      <LineECharts
+        v-if="Object.keys(eChartsData2).length > 0"
+        :opt="eChartsData2"
+        :height="350"
+        table-mode="switch"
+      >
         <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
           <div class="custom-single-table">
             <div class="table-caption">单图组件自定义表格插槽示例</div>
@@ -35,15 +40,24 @@
         v-if="Object.keys(eleEchartsData).length > 0"
         :opt="eleEchartsData"
         :height="350"
-        table-position="bottom"
-        :show-table="true"
+        table-mode="bottom"
       />
     </div>
     <div class="lineEChartsBox">
-      <LineECharts v-if="Object.keys(eChartsData).length > 0" :opt="eChartsData" :height="350" />
+      <LineECharts
+        v-if="Object.keys(eChartsData).length > 0"
+        :opt="eChartsData"
+        :height="350"
+        table-mode="switch"
+      />
     </div>
     <div class="lineEChartsBox">
-      <LineECharts v-if="Object.keys(eChartsData3).length > 0" :opt="eChartsData3" :height="350" />
+      <LineECharts
+        v-if="Object.keys(eChartsData3).length > 0"
+        :opt="eChartsData3"
+        :height="350"
+        table-mode="switch"
+      />
     </div>
 
     <div class="lineEChartsBox">
@@ -52,10 +66,16 @@
         ref="chartRef"
         :opt="eChartsData4"
         :height="350"
+        table-mode="switch"
       />
     </div>
     <div class="lineEChartsBox">
-      <LineECharts v-if="Object.keys(eChartsData5).length > 0" :opt="eChartsData5" :height="350" />
+      <LineECharts
+        v-if="Object.keys(eChartsData5).length > 0"
+        :opt="eChartsData5"
+        :height="350"
+        table-mode="switch"
+      />
     </div>
     <div class="lineEChartsBox box-highlight">
       <LineECharts v-if="Object.keys(powerConsumptionOpt).length > 0" :opt="powerConsumptionOpt" class="chart-canvas"
@@ -270,7 +290,6 @@ onMounted(() => {
     eChartsData.value = {
       title: '时间',
       timeList: Array.from({ length: 3000 }, (_, i) => i + 1),
-      showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
       dataZoomShow: true,
@@ -306,7 +325,6 @@ onMounted(() => {
     eChartsData2.value = {
       title: '时间',
       timeList: Array.from({ length: 24 }, (_, n) => n),
-      showTable: true,
       boundaryGap: true,
       doubleY: true,
       dataZoomShow: true,
@@ -354,7 +372,6 @@ onMounted(() => {
       timeList: Array.from({ length: 24 }, (_, index) =>
         dayjs().startOf('day').add(index, 'hour').format('HH:mm')
       ),
-      showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
       doubleY: true,
@@ -431,7 +448,6 @@ onMounted(() => {
     eChartsData4.value = {
       title: '设备状态分布',
       timeList: ['运行', '离线', '故障', '报警', '无信息'],
-      showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
       dataZoomShow: false,
@@ -474,7 +490,6 @@ onMounted(() => {
     eChartsData5.value = {
       title: '告警趋势',
       timeList: ['运行', '离线', '故障', '报警', '无信息'],
-      showTable: true,
       legendLocation: 'center',
       boundaryGap: true,
       dataZoomShow: false,
@@ -517,7 +532,6 @@ onMounted(() => {
 
     // SOC 和功率监控
     eleEchartsData.value = {
-      showTable: true,
       title: '储能系统监控',
       doubleY: true,
       legendLocation: 'center',

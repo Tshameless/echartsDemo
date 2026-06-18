@@ -14,8 +14,7 @@ import { useChartTable } from './useChartTable'
 import { useProcessedData } from './useProcessedData'
 
 const props = withDefaults(defineProps<EchartsProps>(), {
-  showTable: undefined,
-  tablePosition: 'switch',
+  tableMode: 'none',
   showChartView: undefined,
   tableMaxHeight: undefined,
   chartLabel: '图',
@@ -44,18 +43,19 @@ const optRef = toRef(props, 'opt')
 const timeColumnTitle = toRef(props, 'timeColumnTitle')
 const rendererRef = shallowRef<InstanceType<typeof ChartRenderer> | null>(null)
 const selectedLegends = shallowRef<Record<string, boolean>>({})
+const localShowChartView = shallowRef(true)
 
 const { processedOpt } = useProcessedData(optRef)
 const { getFinalOption } = useChartOption()
-const { canShowTable, setChartView: setLocalChartView, showChartView, tableData, tableHeader } =
-  useChartTable(processedOpt, timeColumnTitle)
+const { tableData, tableHeader } = useChartTable(processedOpt, timeColumnTitle)
 
-const isBottomTableMode = computed(() => props.tablePosition === 'bottom')
-const showSwitchToggle = computed(() => canShowTable.value && !isBottomTableMode.value)
+const canShowTable = computed(() => props.tableMode !== 'none')
+const isBottomTableMode = computed(() => props.tableMode === 'bottom')
+const showSwitchToggle = computed(() => props.tableMode === 'switch')
 
 const displayChart = computed(() => {
-  if (!canShowTable.value || isBottomTableMode.value) return true
-  return props.showChartView ?? showChartView.value
+  if (props.tableMode !== 'switch') return true
+  return props.showChartView ?? localShowChartView.value
 })
 
 const shouldShowChartContent = computed(() => displayChart.value)
@@ -76,14 +76,14 @@ function handleChartReady(payload: EchartsReadyPayload) {
 }
 
 function setChartView(value: boolean) {
-  if (!canShowTable.value || isBottomTableMode.value) return
+  if (props.tableMode !== 'switch') return
 
   if (props.showChartView !== undefined) {
     emit('update:showChartView', value)
     return
   }
 
-  setLocalChartView(value)
+  localShowChartView.value = value
 }
 
 defineExpose({

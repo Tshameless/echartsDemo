@@ -47,14 +47,12 @@ export function useLinkedChartDisplay({
   })
 
   // 基础显示逻辑判断
-  const canShowTable = computed(
-    () => props.showTable ?? chartList.value.some((item) => item?.showTable === true)
-  )
-  const isBottomTableMode = computed(() => props.tablePosition === 'bottom')
-  const showSwitchToggle = computed(() => canShowTable.value && !isBottomTableMode.value)
+  const canShowTable = computed(() => props.tableMode !== 'none')
+  const isBottomTableMode = computed(() => props.tableMode === 'bottom')
+  const showSwitchToggle = computed(() => props.tableMode === 'switch')
 
   const displayChart = computed(() => {
-    if (!canShowTable.value || isBottomTableMode.value) return true
+    if (props.tableMode !== 'switch') return true
     return props.showChartView ?? localShowChartView.value
   })
 
@@ -159,7 +157,7 @@ export function useLinkedChartDisplay({
   }
 
   function setChartView(value: boolean) {
-    if (!canShowTable.value || isBottomTableMode.value) return
+    if (props.tableMode !== 'switch') return
 
     if (props.showChartView !== undefined) {
       onUpdateShowChartView(value)

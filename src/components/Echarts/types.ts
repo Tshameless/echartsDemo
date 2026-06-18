@@ -74,6 +74,8 @@ export interface LegendSelectChangedEvent {
   type: string
 }
 
+export type TableMode = 'none' | 'switch' | 'bottom'
+
 export interface ChartStyleConfig {
   /** 双 Y 轴模式 */
   doubleY?: boolean
@@ -155,7 +157,6 @@ export interface ChartOptions extends ChartStyleConfig {
   compensateType?: string
   deleteFirstPoint?: boolean
   deleteLastPoint?: boolean
-  showTable?: boolean
 
   /** ECharts 原生组件覆盖 */
   legend?: LegendComponentOption
@@ -171,8 +172,7 @@ export interface ChartOptions extends ChartStyleConfig {
 export interface EchartsProps {
   opt: ChartOptions
   height: number | string
-  showTable?: boolean
-  tablePosition?: 'switch' | 'bottom'
+  tableMode?: TableMode
   showChartView?: boolean
   tableMaxHeight?: number | string
   chartLabel?: string
