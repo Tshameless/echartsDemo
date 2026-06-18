@@ -85,6 +85,22 @@
         table-mode="switch"
       />
     </div>
+       <div class="lineEChartsBox">
+      <LineECharts
+        v-if="Object.keys(eChartsData6).length > 0"
+        :opt="eChartsData6"
+        :height="350"
+        table-mode="switch"
+      >
+        <template #table="{ tableMaxHeight }">
+          <DataTableRenderer
+            :columns="customQweTableColumns"
+            :data="customQweTableRows"
+            :height="tableMaxHeight"
+          />
+        </template>
+      </LineECharts>
+    </div>
     <div class="lineEChartsBox box-highlight">
       <LineECharts v-if="Object.keys(powerConsumptionOpt).length > 0" :opt="powerConsumptionOpt" class="chart-canvas"
         :height="170" />
@@ -95,6 +111,7 @@
 import { nextTick, onMounted, shallowRef } from 'vue'
 import LineECharts from '../components/Echarts/index.vue'
 import DataTableRenderer from '../components/Echarts/components/DataTableRenderer.vue'
+import type { ChartOptions, ChartTableRow, TableColumn } from '../components/Echarts/types'
 import usePowerIcon from '../assets/img/usePowerIcon.png';
 import dayjs from "dayjs"
 
@@ -104,11 +121,35 @@ const eChartsDataSpecial = shallowRef({})
 const eChartsData3 = shallowRef({})
 const eChartsData4 = shallowRef({})
 const eChartsData5 = shallowRef({})
+const eChartsData6 = shallowRef({})
 const eleEchartsData = shallowRef({})
 let resizeObserver: ResizeObserver | null = null
 const powerConsumptionOpt = shallowRef<any>({})
 
 const chartRef = shallowRef<InstanceType<typeof LineECharts> | null>(null)
+const customQweTableRows = shallowRef<ChartTableRow[]>([])
+
+const customQweTableColumns: TableColumn[] = [
+  {
+    label: 'Q',
+    field: 'q',
+    prop: 'q',
+    fixed: 'left',
+    width: 140,
+  },
+  {
+    label: 'W',
+    field: 'w',
+    prop: 'w',
+    minWidth: 140,
+  },
+  {
+    label: 'E',
+    field: 'e',
+    prop: 'e',
+    minWidth: 140,
+  },
+]
 
 const getDonutOption = (colors: string[], data: any[], icon: any, unit: string = '(kWh)') => {
   const total = data[0].value;
@@ -539,6 +580,54 @@ onMounted(() => {
       ]
     }
 
+    const eChartsData6Option: ChartOptions = {
+      title: '告警趋势',
+      timeList: ['运行', '离线', '故障', '报警', '无信息'],
+      legendLocation: 'center',
+      boundaryGap: true,
+      dataZoomShow: false,
+      xName: '状态',
+      deleteLastPoint: false,
+      xAlignValue: false,
+      yName: '计数',
+      tooltipFormatter: function (params: any) {
+        return params.map((param: any) => {
+          const safeName = String(param.axisValueLabel).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          const safeValue = param.data != null ? String(param.data).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '--'
+          const unit = param.componentIndex == 0 ? '次' : '‰'
+          return `<div style="display:inline-block;margin:2px 0 0 5px;color:#fff">
+                    <div style="display:inline-block;width:10px;height:10px;margin-right:10px;border-radius:50%;background-color:${param.color}"></div>
+                    ${safeName}：${safeValue}${unit}
+                  </div>`;
+        }).join('<br>');
+      },
+      series: [
+        {
+          name: "发生次数",
+          type: "bar",
+          tableUnit: '(次)',
+          barWidth: '10px',
+          data: [120, 8, 5, 25, 3],
+        },
+        {
+          name: "发生率",
+          type: "line",
+          symbol: 'diamond',
+          tableUnit: '(‰)',
+          data: [4.6, 0.3, 0.2, 1.0, 0.1],
+        },
+      ]
+    }
+
+    eChartsData6.value = eChartsData6Option
+
+    customQweTableRows.value = (eChartsData6Option.timeList ?? []).map((time, index) => ({
+      __rowKey: `qwe-${index}`,
+      time,
+      q: `q-${String(time)}`,
+      w: `w-${index + 1}`,
+      e: `e-${index + 1}`,
+    }))
     // SOC 和功率监控
     eleEchartsData.value = {
       title: '储能系统监控',
