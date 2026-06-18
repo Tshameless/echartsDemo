@@ -68,6 +68,7 @@ const emit = defineEmits<{
   border-radius: 4px;
   font-size: 14px;
   user-select: none;
+  margin-right:48px;
 }
 
 .switch-btn {

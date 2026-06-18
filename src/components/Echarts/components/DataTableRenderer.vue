@@ -27,7 +27,8 @@ defineProps<{
 
 <style scoped>
 .table-container {
-  width: 100%;
+  width: calc(100% - 88px);;
+  margin: 0 auto;
 }
 
 .chart-table {
