@@ -11,26 +11,17 @@
         table-mode="switch"
       >
         <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
-          <div class="custom-single-table">
+          <div
+            class="custom-single-table"
+            :style="{ height: typeof tableMaxHeight === 'number' ? `${tableMaxHeight}px` : tableMaxHeight }"
+          >
             <div class="table-caption">单图组件自定义表格插槽示例</div>
-            <el-table
+            <DataTableRenderer
+              class="custom-single-table-renderer"
+              :columns="dataTableColumns"
               :data="tableRows"
-              :max-height="Number(tableMaxHeight) || 350"
-              bordered
-              stripe
-              style="width: 100%"
-            >
-              <el-table-column
-                v-for="column in dataTableColumns"
-                :key="column.field"
-                :label="column.label"
-                :prop="column.prop"
-                :fixed="column.fixed"
-                :width="column.width"
-                :min-width="column.minWidth"
-                show-overflow-tooltip
-              />
-            </el-table>
+              height="100%"
+            />
           </div>
         </template>
       </LineECharts>
@@ -86,6 +77,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, shallowRef } from 'vue'
 import LineECharts from '../components/Echarts/index.vue'
+import DataTableRenderer from '../components/Echarts/components/DataTableRenderer.vue'
 import usePowerIcon from '../assets/img/usePowerIcon.png';
 import dayjs from "dayjs"
 
@@ -603,12 +595,23 @@ onMounted(() => {
 }
 
 .custom-single-table {
-  padding-top: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
   box-sizing: border-box;
 }
 
+.custom-single-table-renderer {
+  flex: 1;
+  min-height: 0;
+}
+
 .table-caption {
-  margin-bottom: 8px;
+  width: calc(100% - 88px);
+  margin: 0 auto;
+  line-height: 20px;
+  flex-shrink: 0;
   font-size: 12px;
   color: #e5e7eb;
 }
