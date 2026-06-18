@@ -11,25 +11,15 @@
         table-mode="switch"
       >
         <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
-          <el-table
-            :data="buildInsertedTableRows(tableRows)"
-            row-key="__rowKey"
-            :max-height="tableMaxHeight"
-            border
-            stripe
-            style="width: 100%"
-          >
-            <el-table-column
-              v-for="column in buildInsertedTableColumns(dataTableColumns)"
-              :key="column.field"
-              :label="column.label"
-              :prop="column.prop"
-              :fixed="column.fixed"
-              :width="column.width"
-              :min-width="column.minWidth"
-              show-overflow-tooltip
-            />
-          </el-table>
+          <DataTableRenderer
+            :columns="dataTableColumns"
+            :data="tableRows"
+            :height="tableMaxHeight"
+            extra-field="custom_inserted_column"
+            extra-label="E"
+            extra-value-prefix="e"
+            extra-column-mode="insert-after-time"
+          />
         </template>
       </LineECharts>
     </div>
@@ -49,25 +39,15 @@
         table-mode="switch"
       >
         <template #table="{ dataTableColumns, tableRows, tableMaxHeight }">
-          <el-table
-            :data="buildAppendedTableRows(tableRows)"
-            row-key="__rowKey"
-            :max-height="tableMaxHeight"
-            border
-            stripe
-            style="width: 100%"
-          >
-            <el-table-column
-              v-for="column in buildAppendedTableColumns(dataTableColumns)"
-              :key="column.field"
-              :label="column.label"
-              :prop="column.prop"
-              :fixed="column.fixed"
-              :width="column.width"
-              :min-width="column.minWidth"
-              show-overflow-tooltip
-            />
-          </el-table>
+          <DataTableRenderer
+            :columns="dataTableColumns"
+            :data="tableRows"
+            :height="tableMaxHeight"
+            extra-field="custom_appended_column"
+            extra-label="D"
+            extra-value-prefix="d"
+            extra-column-mode="append"
+          />
         </template>
       </LineECharts>
     </div>
@@ -114,7 +94,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, shallowRef } from 'vue'
 import LineECharts from '../components/Echarts/index.vue'
-import type { ChartTableRow, TableColumn } from '../components/Echarts/types'
+import DataTableRenderer from '../components/Echarts/components/DataTableRenderer.vue'
 import usePowerIcon from '../assets/img/usePowerIcon.png';
 import dayjs from "dayjs"
 
@@ -129,77 +109,6 @@ let resizeObserver: ResizeObserver | null = null
 const powerConsumptionOpt = shallowRef<any>({})
 
 const chartRef = shallowRef<InstanceType<typeof LineECharts> | null>(null)
-const INSERTED_FIELD = 'custom_inserted_column'
-const APPENDED_FIELD = 'custom_appended_column'
-const insertedColumnsCache = new WeakMap<TableColumn[], TableColumn[]>()
-const insertedRowsCache = new WeakMap<ChartTableRow[], ChartTableRow[]>()
-const appendedColumnsCache = new WeakMap<TableColumn[], TableColumn[]>()
-const appendedRowsCache = new WeakMap<ChartTableRow[], ChartTableRow[]>()
-
-function buildInsertedTableColumns(columns: TableColumn[]) {
-  const cachedColumns = insertedColumnsCache.get(columns)
-  if (cachedColumns) return cachedColumns
-
-  const [timeColumn, ...dataColumns] = columns
-  const insertedColumn: TableColumn = {
-    label: 'E',
-    field: INSERTED_FIELD,
-    prop: INSERTED_FIELD,
-    minWidth: 140,
-  }
-
-  const nextColumns =
-    !timeColumn
-      ? [insertedColumn]
-      : dataColumns.length === 0
-        ? [timeColumn, insertedColumn]
-        : [timeColumn, insertedColumn, ...dataColumns]
-
-  insertedColumnsCache.set(columns, nextColumns)
-  return nextColumns
-}
-
-function buildInsertedTableRows(rows: ChartTableRow[]) {
-  const cachedRows = insertedRowsCache.get(rows)
-  if (cachedRows) return cachedRows
-
-  const nextRows = rows.map((row, index) => ({
-    ...row,
-    [INSERTED_FIELD]: `e-${index + 1}`,
-  }))
-
-  insertedRowsCache.set(rows, nextRows)
-  return nextRows
-}
-
-function buildAppendedTableColumns(columns: TableColumn[]) {
-  const cachedColumns = appendedColumnsCache.get(columns)
-  if (cachedColumns) return cachedColumns
-
-  const appendedColumn: TableColumn = {
-    label: 'D',
-    field: APPENDED_FIELD,
-    prop: APPENDED_FIELD,
-    minWidth: 140,
-  }
-
-  const nextColumns = [...columns, appendedColumn]
-  appendedColumnsCache.set(columns, nextColumns)
-  return nextColumns
-}
-
-function buildAppendedTableRows(rows: ChartTableRow[]) {
-  const cachedRows = appendedRowsCache.get(rows)
-  if (cachedRows) return cachedRows
-
-  const nextRows = rows.map((row, index) => ({
-    ...row,
-    [APPENDED_FIELD]: `d-${index + 1}`,
-  }))
-
-  appendedRowsCache.set(rows, nextRows)
-  return nextRows
-}
 
 const getDonutOption = (colors: string[], data: any[], icon: any, unit: string = '(kWh)') => {
   const total = data[0].value;
@@ -389,7 +298,7 @@ onMounted(() => {
     // 修复：确保 timeList 和 data 长度一致
     eChartsData.value = {
       title: '时间',
-      timeList: Array.from({ length: 3000 }, (_, i) => i + 1),
+      timeList: Array.from({ length: 96 }, (_, i) => i + 1),
       legendLocation: 'center',
       boundaryGap: true,
       dataZoomShow: true,
@@ -409,14 +318,14 @@ onMounted(() => {
           type: "line",
           step: "end",
           tableUnit: '(MW)',
-          data: Array.from({ length: 3000 }, (_, i) => i + 1)
+          data: Array.from({ length: 96 }, (_, i) => i + 1)
         },
         {
           name: "实时负荷",
           type: "bar",
           barWidth: "10",
           tableUnit: '(MW)',
-          data: Array.from({ length: 3000 }, (_, i) => i + 1)
+          data: Array.from({ length: 96 }, (_, i) => i + 1)
         },
       ]
     }
