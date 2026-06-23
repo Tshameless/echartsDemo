@@ -130,6 +130,12 @@ const chartRef = shallowRef<InstanceType<typeof LineECharts> | null>(null)
 const customQweTableRows = shallowRef<ChartTableRow[]>([])
 
 const customQweTableColumns: TableColumn[] = [
+   {
+    label: 'time',
+    field: 'time',
+    fixed: 'left',
+    width: 140,
+  },
   {
     label: 'Q',
     field: 'q',
